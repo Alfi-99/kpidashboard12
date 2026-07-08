@@ -110,12 +110,12 @@ export default function KpiSectionTable({
                 Target
               </th>
 
-              {/* Frozen: MTD Achievement */}
+              {/* Frozen: Bobot Target */}
               <th style={{
                 position: "sticky",
                 left: "270px",
                 zIndex: 3,
-                width: "120px",
+                width: "100px",
                 padding: "12px 10px",
                 fontSize: "11px",
                 fontWeight: 700,
@@ -126,13 +126,32 @@ export default function KpiSectionTable({
                 borderRight: "1px solid rgba(255, 255, 255, 0.15)",
                 textTransform: "capitalize",
               }}>
+                Bobot Target
+              </th>
+
+              {/* Frozen: MTD Achievement */}
+              <th style={{
+                position: "sticky",
+                left: "370px",
+                zIndex: 3,
+                width: "120px",
+                padding: "12px 10px",
+                fontSize: "11px",
+                fontWeight: 700,
+                color: "#FFFFFF",
+                textAlign: "center",
+                background: "linear-gradient(135deg, #E53935 0%, #EF5350 100%)",
+                borderBottom: "2px solid #A8001C",
+                borderRight: "1px solid rgba(255, 255, 255, 0.15)",
+                textTransform: "capitalize",
+              }}>
                 MTD Achievement
               </th>
 
               {/* Frozen: Bobot Achievement */}
               <th style={{
                 position: "sticky",
-                left: "390px",
+                left: "490px",
                 zIndex: 3,
                 width: "125px",
                 padding: "12px 10px",
@@ -140,7 +159,7 @@ export default function KpiSectionTable({
                 fontWeight: 700,
                 color: "#FFFFFF",
                 textAlign: "center",
-                background: "linear-gradient(135deg, #E53935 0%, #EF5350 100%)",
+                background: "linear-gradient(135deg, #EF5350 0%, #E4002B 100%)",
                 borderBottom: "2px solid #A8001C",
                 borderRight: "2px solid #C62828",
                 boxShadow: "4px 0 8px -3px rgba(0, 0, 0, 0.2)",
@@ -218,10 +237,27 @@ export default function KpiSectionTable({
                     {param.target}
                   </td>
 
-                  {/* Frozen MTD Achievement Cell */}
+                  {/* Frozen Bobot Target Cell */}
                   <td style={{
                     position: "sticky",
                     left: "270px",
+                    zIndex: 2,
+                    padding: "12px 10px",
+                    fontSize: "11.5px",
+                    fontWeight: 500,
+                    color: "#1A1A1A",
+                    textAlign: "center",
+                    backgroundColor: targetBg,
+                    borderBottom: "1px solid #E5E7EB",
+                    borderRight: "1px solid #E5E7EB",
+                  }}>
+                    {param.bobotTarget || "—"}
+                  </td>
+
+                  {/* Frozen MTD Achievement Cell */}
+                  <td style={{
+                    position: "sticky",
+                    left: "370px",
                     zIndex: 2,
                     padding: "12px 10px",
                     fontSize: "11.5px",
@@ -238,7 +274,7 @@ export default function KpiSectionTable({
                   {/* Frozen Bobot Achievement Cell */}
                   <td style={{
                     position: "sticky",
-                    left: "390px",
+                    left: "490px",
                     zIndex: 2,
                     padding: "12px 10px",
                     fontSize: "11.5px",

@@ -108,6 +108,7 @@ function parseTabSheet(rows: string[][], tabName: string, tabKey: string): TabDa
 
       // Extract details
       const target = colB;
+      const bobotTarget = row[2] ? row[2].trim() : ""; // Column C: Bobot Target
       const mtd = row[3] ? row[3].trim() : "";       // Column D: MTD Achievement
       const bobotAch = row[4] ? row[4].trim() : "";  // Column E: Bobot Achievement
 
@@ -127,6 +128,7 @@ function parseTabSheet(rows: string[][], tabName: string, tabKey: string): TabDa
       const kpiParam: KpiParameter = {
         name: colA,
         target: target,
+        bobotTarget: bobotTarget || undefined,
         mtdAchievement: mtd || undefined,
         robotAchievement: bobotAch || undefined,
         dailyValues: Object.keys(dailyValues).length > 0 ? dailyValues : undefined,

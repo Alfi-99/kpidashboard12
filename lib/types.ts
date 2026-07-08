@@ -23,8 +23,9 @@ export interface IncidentItem {
 export interface KpiParameter {
   name: string;
   target: string;
+  bobotTarget?: string; // target weight column
   mtdAchievement?: string;
-  robotAchievement?: string;
+  robotAchievement?: string; // Bobot Achievement
   dailyValues?: Record<number, string>; // day 1-31
   isSubRow?: boolean; // indented sub-parameter
 }
