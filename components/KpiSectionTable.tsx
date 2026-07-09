@@ -14,7 +14,6 @@ export default function KpiSectionTable({
   daysCount,
   animationDelay = 0,
 }: KpiSectionTableProps) {
-  // Generate days array dynamically [1, 2, ..., daysCount]
   const dayColumns = Array.from({ length: daysCount }, (_, i) => i + 1);
 
   return (
@@ -28,14 +27,13 @@ export default function KpiSectionTable({
         marginBottom: "20px",
       }}
     >
-      {/* Section Header with weight pill */}
+      {/* Section Header */}
       <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-        <h3 style={{
+        <h3 className="font-heading" style={{
           fontSize: "15px",
           fontWeight: 800,
-          color: "#1A1A1A",
+          color: "var(--text-primary)",
           margin: 0,
-          fontFamily: "var(--font-inter)",
         }}>
           {section.name}
         </h3>
@@ -43,24 +41,20 @@ export default function KpiSectionTable({
           display: "inline-block",
           fontSize: "11px",
           fontWeight: 700,
-          color: "#E4002B",
-          backgroundColor: "#FDE7EA",
+          color: "var(--accent-primary)",
+          backgroundColor: "var(--accent-bg)",
           padding: "3px 10px",
           borderRadius: "6px",
-          border: "1px solid #FCA5A5",
-          boxShadow: "0 1px 2px rgba(228, 0, 43, 0.05)",
+          border: `1px solid var(--border-strong)`,
         }}>
           {section.weight}%
         </span>
       </div>
 
       {/* Table Wrapper */}
-      <div style={{
+      <div className="glass-card-static" style={{
         overflowX: "auto",
-        border: "1px solid #E5E7EB",
-        borderRadius: "8px",
-        backgroundColor: "#FFFFFF",
-        boxShadow: "0 2px 8px rgba(0, 0, 0, 0.04)",
+        padding: 0,
       }}>
         <table style={{
           width: "100%",
@@ -69,9 +63,7 @@ export default function KpiSectionTable({
           tableLayout: "fixed",
         }}>
           <thead>
-            <tr style={{
-              background: "linear-gradient(135deg, #A8001C 0%, #D32F2F 100%)",
-            }}>
+            <tr>
               {/* Frozen: Parameter */}
               <th style={{
                 position: "sticky",
@@ -83,8 +75,8 @@ export default function KpiSectionTable({
                 fontWeight: 700,
                 color: "#FFFFFF",
                 textAlign: "left",
-                background: "linear-gradient(135deg, #A8001C 0%, #C62828 100%)",
-                borderBottom: "2px solid #A8001C",
+                background: "linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%)",
+                borderBottom: `2px solid var(--accent-primary)`,
                 borderRight: "1px solid rgba(255, 255, 255, 0.15)",
                 textTransform: "capitalize",
               }}>
@@ -102,8 +94,8 @@ export default function KpiSectionTable({
                 fontWeight: 700,
                 color: "#FFFFFF",
                 textAlign: "center",
-                background: "linear-gradient(135deg, #C62828 0%, #D32F2F 100%)",
-                borderBottom: "2px solid #A8001C",
+                background: "linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%)",
+                borderBottom: `2px solid var(--accent-primary)`,
                 borderRight: "1px solid rgba(255, 255, 255, 0.15)",
                 textTransform: "capitalize",
               }}>
@@ -121,8 +113,8 @@ export default function KpiSectionTable({
                 fontWeight: 700,
                 color: "#FFFFFF",
                 textAlign: "center",
-                background: "linear-gradient(135deg, #D32F2F 0%, #E53935 100%)",
-                borderBottom: "2px solid #A8001C",
+                background: "linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%)",
+                borderBottom: `2px solid var(--accent-primary)`,
                 borderRight: "1px solid rgba(255, 255, 255, 0.15)",
                 textTransform: "capitalize",
               }}>
@@ -140,8 +132,8 @@ export default function KpiSectionTable({
                 fontWeight: 700,
                 color: "#FFFFFF",
                 textAlign: "center",
-                background: "linear-gradient(135deg, #E53935 0%, #EF5350 100%)",
-                borderBottom: "2px solid #A8001C",
+                background: "linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%)",
+                borderBottom: `2px solid var(--accent-primary)`,
                 borderRight: "1px solid rgba(255, 255, 255, 0.15)",
                 textTransform: "capitalize",
               }}>
@@ -159,9 +151,9 @@ export default function KpiSectionTable({
                 fontWeight: 700,
                 color: "#FFFFFF",
                 textAlign: "center",
-                background: "linear-gradient(135deg, #EF5350 0%, #E4002B 100%)",
-                borderBottom: "2px solid #A8001C",
-                borderRight: "2px solid #C62828",
+                background: "linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%)",
+                borderBottom: `2px solid var(--accent-primary)`,
+                borderRight: `2px solid var(--accent-primary)`,
                 boxShadow: "4px 0 8px -3px rgba(0, 0, 0, 0.2)",
                 textTransform: "capitalize",
               }}>
@@ -177,7 +169,8 @@ export default function KpiSectionTable({
                   fontWeight: 700,
                   color: "#FFFFFF",
                   textAlign: "center",
-                  borderBottom: "2px solid #A8001C",
+                  background: "linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%)",
+                  borderBottom: `2px solid var(--accent-primary)`,
                   borderRight: day === daysCount ? "none" : "1px solid rgba(255, 255, 255, 0.15)",
                 }}>
                   {day}
@@ -188,16 +181,14 @@ export default function KpiSectionTable({
           <tbody>
             {section.parameters.map((param, index) => {
               const isSub = param.isSubRow;
-              const rowBg = isSub ? "#FCFDFD" : "#FFFFFF";
-              const targetBg = isSub ? "#FCFDFD" : "#F9FAFB";
 
               return (
                 <tr
                   key={index}
-                  style={{
-                    backgroundColor: rowBg,
-                  }}
                   className="kpi-row-hover"
+                  style={{
+                    background: isSub ? "var(--bg-tertiary)" : "var(--bg-card)",
+                  }}
                 >
                   {/* Frozen Parameter Cell */}
                   <td style={{
@@ -207,12 +198,12 @@ export default function KpiSectionTable({
                     padding: isSub ? "10px 14px 10px 36px" : "12px 14px",
                     fontSize: "12px",
                     fontWeight: isSub ? 400 : 600,
-                    color: isSub ? "#6B7280" : "#1A1A1A",
+                    color: isSub ? "var(--text-muted)" : "var(--text-primary)",
                     fontStyle: isSub ? "italic" : "normal",
                     textAlign: "left",
-                    backgroundColor: rowBg,
-                    borderBottom: "1px solid #E5E7EB",
-                    borderRight: "1px solid #E5E7EB",
+                    background: isSub ? "var(--bg-tertiary)" : "var(--bg-card)",
+                    borderBottom: `1px solid var(--border-subtle)`,
+                    borderRight: `1px solid var(--border-subtle)`,
                     whiteSpace: "nowrap",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
@@ -228,11 +219,11 @@ export default function KpiSectionTable({
                     padding: "12px 10px",
                     fontSize: "11.5px",
                     fontWeight: 600,
-                    color: "#1A1A1A",
+                    color: "var(--text-primary)",
                     textAlign: "center",
-                    backgroundColor: targetBg,
-                    borderBottom: "1px solid #E5E7EB",
-                    borderRight: "1px solid #E5E7EB",
+                    background: isSub ? "var(--bg-tertiary)" : "var(--bg-secondary)",
+                    borderBottom: `1px solid var(--border-subtle)`,
+                    borderRight: `1px solid var(--border-subtle)`,
                   }}>
                     {param.target}
                   </td>
@@ -245,11 +236,11 @@ export default function KpiSectionTable({
                     padding: "12px 10px",
                     fontSize: "11.5px",
                     fontWeight: 500,
-                    color: "#1A1A1A",
+                    color: "var(--text-primary)",
                     textAlign: "center",
-                    backgroundColor: targetBg,
-                    borderBottom: "1px solid #E5E7EB",
-                    borderRight: "1px solid #E5E7EB",
+                    background: isSub ? "var(--bg-tertiary)" : "var(--bg-secondary)",
+                    borderBottom: `1px solid var(--border-subtle)`,
+                    borderRight: `1px solid var(--border-subtle)`,
                   }}>
                     {param.bobotTarget || "—"}
                   </td>
@@ -262,11 +253,11 @@ export default function KpiSectionTable({
                     padding: "12px 10px",
                     fontSize: "11.5px",
                     fontWeight: 600,
-                    color: "#E4002B",
+                    color: "var(--accent-secondary)",
                     textAlign: "center",
-                    backgroundColor: rowBg,
-                    borderBottom: "1px solid #E5E7EB",
-                    borderRight: "1px solid #E5E7EB",
+                    background: isSub ? "var(--bg-tertiary)" : "var(--bg-card)",
+                    borderBottom: `1px solid var(--border-subtle)`,
+                    borderRight: `1px solid var(--border-subtle)`,
                   }}>
                     {param.mtdAchievement || "—"}
                   </td>
@@ -279,29 +270,29 @@ export default function KpiSectionTable({
                     padding: "12px 10px",
                     fontSize: "11.5px",
                     fontWeight: 500,
-                    color: "#1A1A1A",
+                    color: "var(--text-primary)",
                     textAlign: "center",
-                    backgroundColor: rowBg,
-                    borderBottom: "1px solid #E5E7EB",
-                    borderRight: "2px solid #E5E7EB",
+                    background: isSub ? "var(--bg-tertiary)" : "var(--bg-card)",
+                    borderBottom: `1px solid var(--border-subtle)`,
+                    borderRight: `2px solid var(--border-default)`,
                     boxShadow: "4px 0 8px -3px rgba(0, 0, 0, 0.15)",
                   }}>
                     {param.robotAchievement || "—"}
                   </td>
 
-                  {/* Scrollable Dynamic Daily Columns */}
+                  {/* Scrollable Daily Columns */}
                   {dayColumns.map((day) => {
                     const cellVal = param.dailyValues?.[day];
                     return (
                       <td key={day} style={{
                         padding: "12px 2px",
                         fontSize: "10px",
-                        color: "#4B5563",
+                        color: "var(--text-secondary)",
                         fontWeight: 600,
                         textAlign: "center",
-                        borderBottom: "1px solid #F0F0F0",
-                        borderRight: day === daysCount ? "none" : "1px solid #F0F0F0",
-                        backgroundColor: cellVal ? "#FFF7F7" : "transparent",
+                        borderBottom: `1px solid var(--border-subtle)`,
+                        borderRight: day === daysCount ? "none" : `1px solid var(--border-subtle)`,
+                        backgroundColor: cellVal ? "var(--accent-bg)" : "transparent",
                       }}>
                         {cellVal || ""}
                       </td>

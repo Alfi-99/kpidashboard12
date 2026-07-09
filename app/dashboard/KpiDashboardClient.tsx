@@ -1,7 +1,7 @@
 // app/dashboard/KpiDashboardClient.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import useSWR from "swr";
 import type { KpiDashboardData } from "@/lib/types";
 import AchievementGauge from "@/components/AchievementGauge";
@@ -18,13 +18,19 @@ interface KpiDashboardClientProps {
 export default function KpiDashboardClient({ dashboardData }: KpiDashboardClientProps) {
   const { data: liveData } = useSWR<KpiDashboardData>("/api/kpi", fetcher, {
     fallbackData: dashboardData,
-    refreshInterval: 10000, // Poll every 10 seconds for real-time updates
+    refreshInterval: 10000,
   });
 
   const activeData = liveData || dashboardData;
 
   const [activeTab, setActiveTab] = useState(activeData.tabs[0]?.tabKey || "callCenter");
   const [selectedPeriod, setSelectedPeriod] = useState("2026-07");
+  const [isDark, setIsDark] = useState(true);
+
+  // Theme toggle: set data-theme attribute on <html>
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
+  }, [isDark]);
 
   const tabs = activeData.tabs.map((t) => ({
     key: t.tabKey,
@@ -33,17 +39,15 @@ export default function KpiDashboardClient({ dashboardData }: KpiDashboardClient
 
   const currentTabData = activeData.tabs.find((t) => t.tabKey === activeTab) || activeData.tabs[0];
 
-  // Helper to calculate days count dynamically based on the selected year and month
   const getDaysInMonth = (periodStr: string) => {
     const [year, month] = periodStr.split("-").map(Number);
-    // Setting day = 0 returns the last day of the previous month (which is the month we passed since it's 1-indexed)
     return new Date(year, month, 0).getDate();
   };
 
   const daysCount = getDaysInMonth(selectedPeriod);
 
   return (
-    <div style={{ minHeight: "100vh", background: "#FFFFFF", fontFamily: "var(--font-inter)" }}>
+    <div className="dot-pattern" style={{ minHeight: "100vh", background: "var(--bg-primary)", fontFamily: "var(--font-body)" }}>
       <div
         style={{
           display: "grid",
@@ -53,10 +57,10 @@ export default function KpiDashboardClient({ dashboardData }: KpiDashboardClient
       >
         {/* ─── Left Sidebar ─── */}
         <aside
-          className="animate-fade-in-up"
+          className="animate-fade-in-up glass-card-static"
           style={{
-            background: "linear-gradient(180deg, #FFFFFF 0%, #FFF9F9 100%)",
-            borderRight: "1px solid #FEE2E2",
+            borderRight: `1px solid var(--border-default)`,
+            borderRadius: 0,
             padding: "30px 24px",
             display: "flex",
             flexDirection: "column",
@@ -65,35 +69,56 @@ export default function KpiDashboardClient({ dashboardData }: KpiDashboardClient
             top: 0,
             height: "100vh",
             overflowY: "auto",
-            boxShadow: "2px 0 10px rgba(228, 0, 43, 0.02)",
           }}
         >
-          {/* Dashboard Title */}
-          <div>
-            <h1 style={{
-              fontSize: "21px",
-              fontWeight: 800,
-              color: "#A8001C",
-              letterSpacing: "-0.03em",
-              lineHeight: 1.2,
-              margin: 0,
-            }}>
-              Dashboard KPI
-            </h1>
-            <p style={{
-              fontSize: "11px",
-              color: "#9CA3AF",
-              marginTop: "4px",
-              fontWeight: 600,
-              textTransform: "uppercase",
-              letterSpacing: "0.03em",
-            }}>
-              Performance Monitoring & Overview
-            </p>
+          {/* Dashboard Title + Theme Toggle */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div>
+              <h1 className="font-heading" style={{
+                fontSize: "21px",
+                fontWeight: 800,
+                color: "var(--accent-primary)",
+                letterSpacing: "-0.03em",
+                lineHeight: 1.2,
+                margin: 0,
+              }}>
+                Dashboard KPI
+              </h1>
+              <p style={{
+                fontSize: "11px",
+                color: "var(--text-muted)",
+                marginTop: "4px",
+                fontWeight: 600,
+                textTransform: "uppercase",
+                letterSpacing: "0.03em",
+              }}>
+                Performance Monitoring
+              </p>
+            </div>
+
+            {/* Theme Toggle */}
+            <button
+              className="theme-toggle"
+              onClick={() => setIsDark(!isDark)}
+              aria-label="Toggle theme"
+            >
+              <div className="theme-toggle-knob">
+                {isDark ? (
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                  </svg>
+                ) : (
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
+                    <circle cx="12" cy="12" r="5" />
+                    <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+                  </svg>
+                )}
+              </div>
+            </button>
           </div>
 
           {/* Divider */}
-          <div style={{ height: "1px", background: "#FEE2E2" }} />
+          <div style={{ height: "1px", background: "var(--border-default)" }} />
 
           {/* Total Achievement Donut */}
           <div style={{ display: "flex", justifyContent: "center", padding: "6px 0" }}>
@@ -105,7 +130,7 @@ export default function KpiDashboardClient({ dashboardData }: KpiDashboardClient
           </div>
 
           {/* Divider */}
-          <div style={{ height: "1px", background: "#FEE2E2" }} />
+          <div style={{ height: "1px", background: "var(--border-default)" }} />
 
           {/* Summary Highlight */}
           <SummaryHighlight items={currentTabData.summaryHighlight} />
@@ -121,7 +146,7 @@ export default function KpiDashboardClient({ dashboardData }: KpiDashboardClient
             gap: "24px",
             marginBottom: "28px",
             flexWrap: "wrap",
-            borderBottom: "1px solid #F3F4F6",
+            borderBottom: `1px solid var(--border-subtle)`,
             paddingBottom: "16px",
           }}>
             {/* Tab Selector */}
@@ -132,72 +157,26 @@ export default function KpiDashboardClient({ dashboardData }: KpiDashboardClient
               <span style={{
                 fontSize: "12px",
                 fontWeight: 800,
-                color: "#A8001C",
+                color: "var(--accent-primary)",
                 textTransform: "uppercase",
                 letterSpacing: "0.03em",
                 whiteSpace: "nowrap",
               }}>
                 Periode Month :
               </span>
-              <div style={{ position: "relative" }}>
-                <select
-                  id="period-filter"
-                  value={selectedPeriod}
-                  onChange={(e) => setSelectedPeriod(e.target.value)}
-                  style={{
-                    appearance: "none",
-                    WebkitAppearance: "none",
-                    padding: "8px 36px 8px 16px",
-                    fontSize: "13px",
-                    fontWeight: 700,
-                    borderRadius: "20px",
-                    border: "1px solid #FCA5A5",
-                    color: "#A8001C",
-                    background: "#FFF5F5",
-                    cursor: "pointer",
-                    minWidth: "150px",
-                    outline: "none",
-                    fontFamily: "inherit",
-                    boxShadow: "0 1px 3px rgba(228, 0, 43, 0.05)",
-                    transition: "all 0.2s ease",
-                  }}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = "#E4002B";
-                    e.target.style.boxShadow = "0 0 0 3px rgba(228, 0, 43, 0.12)";
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = "#FCA5A5";
-                    e.target.style.boxShadow = "0 1px 3px rgba(228, 0, 43, 0.05)";
-                  }}
-                >
-                  <option value="2026-07">July 2026</option>
-                  <option value="2026-06">June 2026</option>
-                  <option value="2026-05">May 2026</option>
-                  <option value="2026-04">April 2026</option>
-                  <option value="2026-02">February 2026</option>
-                </select>
-                <svg
-                  style={{
-                    position: "absolute",
-                    right: "12px",
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    pointerEvents: "none",
-                  }}
-                  width="12"
-                  height="12"
-                  viewBox="0 0 12 12"
-                  fill="none"
-                >
-                  <path
-                    d="M3 4.5L6 7.5L9 4.5"
-                    stroke="#E4002B"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </div>
+              <select
+                id="period-filter"
+                value={selectedPeriod}
+                onChange={(e) => setSelectedPeriod(e.target.value)}
+                className="filter-select"
+                style={{ minWidth: "150px" }}
+              >
+                <option value="2026-07">July 2026</option>
+                <option value="2026-06">June 2026</option>
+                <option value="2026-05">May 2026</option>
+                <option value="2026-04">April 2026</option>
+                <option value="2026-02">February 2026</option>
+              </select>
             </div>
           </div>
 

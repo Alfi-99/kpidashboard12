@@ -36,16 +36,12 @@ export default function AchievementGauge({
   const progress = Math.min(animatedValue / maxValue, 1);
   const dashOffset = circumference * (1 - progress);
 
-  // Red and White Premium Palette
-  const trackColor = "#FFF5F5"; // Soft pinkish white track
-  const strokeColor = "url(#redGaugeGradient)";
-
   return (
     <div className="flex flex-col items-center gap-1">
       {label && (
         <span
           className={`${dimensions.labelSize} font-bold uppercase tracking-wider`}
-          style={{ color: "#8B0000", marginBottom: "6px" }}
+          style={{ color: "var(--accent-primary)", marginBottom: "6px" }}
         >
           {label}
         </span>
@@ -56,10 +52,9 @@ export default function AchievementGauge({
           height={dimensions.svgSize}
         >
           <defs>
-            {/* Red and Cherry Crimson Premium Gradient */}
             <linearGradient id="redGaugeGradient" x1="0%" y1="100%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#A8001C" />
-              <stop offset="100%" stopColor="#E4002B" />
+              <stop offset="0%" stopColor="var(--accent-primary)" />
+              <stop offset="100%" stopColor="var(--accent-secondary)" />
             </linearGradient>
           </defs>
 
@@ -69,17 +64,17 @@ export default function AchievementGauge({
             cy={dimensions.svgSize / 2}
             r={radius}
             fill="none"
-            stroke={trackColor}
+            stroke="var(--accent-bg-strong)"
             strokeWidth={dimensions.strokeWidth}
           />
 
-          {/* Progress Circle with Gradient */}
+          {/* Progress Circle */}
           <circle
             cx={dimensions.svgSize / 2}
             cy={dimensions.svgSize / 2}
             r={radius}
             fill="none"
-            stroke={strokeColor}
+            stroke="url(#redGaugeGradient)"
             strokeWidth={dimensions.strokeWidth}
             strokeLinecap="round"
             strokeDasharray={circumference}
@@ -95,7 +90,7 @@ export default function AchievementGauge({
 
         {/* Center Text */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className={`${dimensions.fontSize} font-black leading-none`} style={{ color: "#E4002B" }}>
+          <span className={`${dimensions.fontSize} font-black leading-none`} style={{ color: "var(--accent-primary)" }}>
             {animatedValue}
             <span className={dimensions.suffixSize}>{suffix || "%"}</span>
           </span>

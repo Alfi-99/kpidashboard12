@@ -1,11 +1,17 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Plus_Jakarta_Sans, Outfit } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
+const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
   display: "swap",
+  variable: "--font-body",
+});
+
+const outfit = Outfit({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-heading",
 });
 
 export const metadata: Metadata = {
@@ -20,14 +26,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="id" className={`${inter.variable} h-full antialiased`}>
-      <body
-        className="min-h-full flex flex-col"
-        style={{
-          fontFamily: "var(--font-inter)",
-          backgroundColor: "var(--color-bg)",
-        }}
-      >
+    <html lang="id" className={`${plusJakartaSans.variable} ${outfit.variable} antialiased`} suppressHydrationWarning>
+      <body className="font-body min-h-dvh">
         {children}
       </body>
     </html>
