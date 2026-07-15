@@ -1,8 +1,8 @@
-import { fetchSheetRange } from "./googleSheets";
 import type { KpiDashboardData, TabData, KpiSection, KpiParameter } from "./types";
 import { mockDashboardData } from "./mockDataNew";
 
 const DEFAULT_PERIOD = "2026-07";
+const PUBLIC_SHEET_ID = "1zYDTRPdQo8OuXP1MLRu3FbpSaEXb-zMEdY3jabmvXTI";
 
 type TabDefinition = {
   tabName: string;
@@ -252,13 +252,19 @@ function periodLabel(period: string): string {
 }
 
 export async function getKpiData(period = DEFAULT_PERIOD): Promise<KpiDashboardData> {
-  const sheetId = process.env.GOOGLE_SHEET_ID || "1zYDTRPdQo8OuXP1MLRu3FbpSaEXb-zMEdY3jabmvXTI";
-  const authenticated = Boolean(process.env.GOOGLE_SHEETS_CLIENT_EMAIL && process.env.GOOGLE_SHEETS_PRIVATE_KEY);
+  // This dashboard is read-only and the spreadsheet is public, so no service
+  // account credentials are required. Keeping this path public also avoids a
+  // malformed private key forcing the dashboard into mock-data fallback.
+  const configuredSheetId = process.env.GOOGLE_SHEET_ID?.trim();
+  const sheetId = configuredSheetId && !/placeholder|example|xxxx|1AbCDefGh/i.test(configuredSheetId)
+    ? configuredSheetId
+    : PUBLIC_SHEET_ID;
 
   try {
-    const [rekapRows, dailyRows] = authenticated
-      ? await Promise.all([fetchSheetRange("'All Rekap'!A1:AZ500"), fetchSheetRange("'Daily'!A1:AZ500")])
-      : await Promise.all([fetchPublicSheetCsv(sheetId, "All Rekap"), fetchPublicSheetCsv(sheetId, "Daily")]);
+    const [rekapRows, dailyRows] = await Promise.all([
+      fetchPublicSheetCsv(sheetId, "All Rekap"),
+      fetchPublicSheetCsv(sheetId, "Daily"),
+    ]);
 
     const tabs = TAB_DEFINITIONS.map((definition) =>
       parseRekapTab(rekapRows, dailyRows, definition, period) ?? mockDashboardData.tabs[definition.fallbackIndex],
