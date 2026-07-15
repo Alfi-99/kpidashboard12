@@ -19,11 +19,13 @@ export default function KpiDashboardClient({ dashboardData }: KpiDashboardClient
   const [activeTab, setActiveTab] = useState(dashboardData.tabs[0]?.tabKey || "callCenter");
   const [selectedPeriod, setSelectedPeriod] = useState("2026-07");
   const [isDark, setIsDark] = useState(true);
+  const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
 
-  const { data: liveData } = useSWR<KpiDashboardData>(`/api/kpi?period=${selectedPeriod}`, fetcher, {
+  const { data: liveData, isValidating, mutate } = useSWR<KpiDashboardData>(`/api/kpi?period=${selectedPeriod}`, fetcher, {
     fallbackData: dashboardData,
     refreshInterval: 10000,
     keepPreviousData: true,
+    onSuccess: () => setLastSyncedAt(new Date()),
   });
 
   const activeData = liveData || dashboardData;
@@ -46,6 +48,10 @@ export default function KpiDashboardClient({ dashboardData }: KpiDashboardClient
   };
 
   const daysCount = getDaysInMonth(selectedPeriod);
+
+  const syncData = async () => {
+    await mutate();
+  };
 
   return (
     <div className="dot-pattern" style={{ minHeight: "100vh", background: "var(--bg-primary)", fontFamily: "var(--font-body)" }}>
@@ -178,6 +184,61 @@ export default function KpiDashboardClient({ dashboardData }: KpiDashboardClient
                 <option value="2026-04">April 2026</option>
                 <option value="2026-02">February 2026</option>
               </select>
+            </div>
+
+            {/* Manual Google Sheets sync */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "4px" }}>
+              <button
+                type="button"
+                onClick={syncData}
+                disabled={isValidating}
+                aria-label="Sinkronkan data Google Sheets"
+                style={{
+                  minHeight: "38px",
+                  padding: "0 15px",
+                  border: `1px solid var(--border-strong)`,
+                  borderRadius: "8px",
+                  background: isValidating
+                    ? "var(--bg-tertiary)"
+                    : "linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))",
+                  color: isValidating ? "var(--text-muted)" : "#fff",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                  fontSize: "11px",
+                  fontWeight: 800,
+                  letterSpacing: "0.03em",
+                  textTransform: "uppercase",
+                  cursor: isValidating ? "wait" : "pointer",
+                  opacity: isValidating ? 0.8 : 1,
+                  boxShadow: isValidating ? "none" : "0 6px 18px var(--accent-bg-strong)",
+                  transition: "all 160ms ease",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                <svg
+                  className={isValidating ? "animate-spin" : ""}
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M20 11a8.1 8.1 0 0 0-15.5-2M4 4v5h5" />
+                  <path d="M4 13a8.1 8.1 0 0 0 15.5 2M20 20v-5h-5" />
+                </svg>
+                {isValidating ? "Menyinkronkan..." : "Sinkronkan Data"}
+              </button>
+              <span style={{ fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+                {lastSyncedAt
+                  ? `Terakhir: ${lastSyncedAt.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`
+                  : "Belum disinkronkan"}
+              </span>
             </div>
           </div>
 
