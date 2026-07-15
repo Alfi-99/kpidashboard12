@@ -16,16 +16,17 @@ interface KpiDashboardClientProps {
 }
 
 export default function KpiDashboardClient({ dashboardData }: KpiDashboardClientProps) {
-  const { data: liveData } = useSWR<KpiDashboardData>("/api/kpi", fetcher, {
+  const [activeTab, setActiveTab] = useState(dashboardData.tabs[0]?.tabKey || "callCenter");
+  const [selectedPeriod, setSelectedPeriod] = useState("2026-07");
+  const [isDark, setIsDark] = useState(true);
+
+  const { data: liveData } = useSWR<KpiDashboardData>(`/api/kpi?period=${selectedPeriod}`, fetcher, {
     fallbackData: dashboardData,
     refreshInterval: 10000,
+    keepPreviousData: true,
   });
 
   const activeData = liveData || dashboardData;
-
-  const [activeTab, setActiveTab] = useState(activeData.tabs[0]?.tabKey || "callCenter");
-  const [selectedPeriod, setSelectedPeriod] = useState("2026-07");
-  const [isDark, setIsDark] = useState(true);
 
   // Theme toggle: set data-theme attribute on <html>
   useEffect(() => {

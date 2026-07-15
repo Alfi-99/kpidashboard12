@@ -1,216 +1,272 @@
-// lib/kpiMapper.ts
 import { fetchSheetRange } from "./googleSheets";
 import type { KpiDashboardData, TabData, KpiSection, KpiParameter } from "./types";
 import { mockDashboardData } from "./mockDataNew";
 
-// Helper to parse percentages or numbers safely
-function parsePercentage(val: string | undefined): number {
-  if (!val) return 0;
-  const cleaned = val.replace(/%/g, "").trim();
-  const num = Number(cleaned);
-  return isNaN(num) ? 0 : num;
+const DEFAULT_PERIOD = "2026-07";
+
+type TabDefinition = {
+  tabName: string;
+  tabKey: string;
+  markers: string[];
+  fallbackIndex: number;
+};
+
+const TAB_DEFINITIONS: TabDefinition[] = [
+  { tabName: "Call Center", tabKey: "callCenter", markers: ["callcenter"], fallbackIndex: 0 },
+  { tabName: "e-Care", tabKey: "eCare", markers: ["ecare"], fallbackIndex: 1 },
+];
+
+function clean(value: string | undefined): string {
+  return (value ?? "").trim();
 }
 
-// Simple zero-dependency CSV parser
+function normalize(value: string | undefined): string {
+  return clean(value).toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function parsePercentage(value: string | undefined, fallback = 0): number {
+  const parsed = Number(clean(value).replace(/%/g, "").replace(",", "."));
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
 function parseCSV(csvText: string): string[][] {
-  const lines = csvText.split(/\r?\n/);
-  return lines.map((line) => {
-    const result: string[] = [];
-    let current = "";
-    let inQuotes = false;
-    for (let i = 0; i < line.length; i++) {
-      const char = line[i];
-      if (char === '"') {
-        inQuotes = !inQuotes;
-      } else if (char === "," && !inQuotes) {
-        result.push(current.trim());
-        current = "";
+  return csvText.split(/\r?\n/).map((line) => {
+    const values: string[] = [];
+    let value = "";
+    let quoted = false;
+
+    for (let index = 0; index < line.length; index++) {
+      const char = line[index];
+      if (char === '"' && line[index + 1] === '"' && quoted) {
+        value += '"';
+        index++;
+      } else if (char === '"') {
+        quoted = !quoted;
+      } else if (char === "," && !quoted) {
+        values.push(value.trim());
+        value = "";
       } else {
-        current += char;
+        value += char;
       }
     }
-    result.push(current.trim());
-    return result;
+
+    values.push(value.trim());
+    return values;
   });
 }
 
-// Helper to fetch public sheet data as CSV
 async function fetchPublicSheetCsv(sheetId: string, sheetName: string): Promise<string[][]> {
   const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
-  const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error(`Failed to fetch public sheet CSV: ${res.statusText}`);
-  }
-  const text = await res.text();
-  return parseCSV(text);
+  const response = await fetch(url, { cache: "no-store" });
+  if (!response.ok) throw new Error(`Failed to fetch ${sheetName}: ${response.status}`);
+  return parseCSV(await response.text());
 }
 
-// Robust sheet parser function
-function parseTabSheet(rows: string[][], tabName: string, tabKey: string): TabData {
-  let totalAchievement = 95; // default fallback
-  const sectionsMap: Record<string, { weight: number; parameters: KpiParameter[] }> = {};
-  const summaryHighlight: string[] = [];
+function periodParts(period: string): { year: number; month: number } {
+  const [year, month] = period.split("-").map(Number);
+  return { year, month };
+}
 
-  let currentSectionName: string | null = null;
+function matchesMonth(value: string | undefined, period: string): boolean {
+  const text = clean(value);
+  if (!text) return false;
+  const { year, month } = periodParts(period);
 
-  for (let i = 0; i < rows.length; i++) {
-    const row = rows[i];
-    if (!row || row.length === 0) continue;
+  const slash = text.match(/^(\d{1,2})\/(\d{4})$/);
+  if (slash) return Number(slash[1]) === month && Number(slash[2]) === year;
 
-    const colA = row[0] ? row[0].trim() : "";
-    const colB = row[1] ? row[1].trim() : "";
+  const iso = text.match(/^(\d{4})-(\d{1,2})(?:-\d{1,2})?$/);
+  if (iso) return Number(iso[1]) === year && Number(iso[2]) === month;
 
-    // 1. Check for Total Achievement
-    if (colA.toLowerCase() === "total achievement") {
-      if (colB) {
-        totalAchievement = parsePercentage(colB);
-      }
-      continue;
-    }
+  const date = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (date) return Number(date[3]) === year && Number(date[1]) === month;
 
-    // 2. Detect Highlights (can be anywhere in the sheet or labeled Highlight in Col A)
-    if (colA.toLowerCase().startsWith("highlight") || colA.toLowerCase().startsWith("summary highlight")) {
-      const highlightVal = colB || colA.substring(colA.indexOf(":") + 1).trim();
-      if (highlightVal && !highlightVal.toLowerCase().includes("(freetext)")) {
-        summaryHighlight.push(highlightVal);
-      }
-      continue;
-    }
+  return false;
+}
 
-    // 3. Detect Section Start
-    if (colA.toLowerCase().startsWith("total revenue")) {
-      currentSectionName = "Revenue";
-      sectionsMap[currentSectionName] = {
-        weight: colB ? parsePercentage(colB) : 20,
-        parameters: [],
-      };
-      continue;
-    } else if (colA.toLowerCase().startsWith("total cx") || colA.toLowerCase().startsWith("total customer experience")) {
-      currentSectionName = "Customer Experience";
-      sectionsMap[currentSectionName] = {
-        weight: colB ? parsePercentage(colB) : 45,
-        parameters: [],
-      };
-      continue;
-    } else if (colA.toLowerCase().startsWith("total internal process")) {
-      currentSectionName = "Internal Process";
-      sectionsMap[currentSectionName] = {
-        weight: colB ? parsePercentage(colB) : 35,
-        parameters: [],
-      };
-      continue;
-    }
+function dayFromDate(value: string | undefined, period: string): number | null {
+  const text = clean(value);
+  const { year, month } = periodParts(period);
+  const slash = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (slash && Number(slash[1]) === month && Number(slash[3]) === year) return Number(slash[2]);
 
-    // 4. Parse Parameters if we are inside a section
-    if (currentSectionName && colA) {
-      // Skip header row
-      if (colA.toLowerCase() === "parameter") continue;
+  const iso = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (iso && Number(iso[1]) === year && Number(iso[2]) === month) return Number(iso[3]);
+  return null;
+}
 
-      // Extract details
-      const target = colB;
-      const bobotTarget = row[2] ? row[2].trim() : ""; // Column C: Bobot Target
-      const mtd = row[3] ? row[3].trim() : "";       // Column D: MTD Achievement
-      const bobotAch = row[4] ? row[4].trim() : "";  // Column E: Bobot Achievement
+function isMarker(value: string | undefined, definition: TabDefinition): boolean {
+  const normalized = normalize(value);
+  return definition.markers.includes(normalized);
+}
 
-      // Daily values: columns F to AJ (indexes 5 to 35 in 0-indexed array)
-      const dailyValues: Record<number, string> = {};
-      for (let day = 1; day <= 31; day++) {
-        const val = row[5 + (day - 1)]; // Col F is index 5
-        if (val !== undefined && val.trim() !== "") {
-          dailyValues[day] = val.trim();
-        }
-      }
+function tabSegment(rows: string[][], definition: TabDefinition): string[][] {
+  const start = rows.findIndex((row) => row.some((cell) => isMarker(cell, definition)));
+  if (start < 0) return [];
 
-      // Check if parameter is a sub-row (indented or starts with whitespace)
-      const isSubRow = row[0].startsWith(" ") || row[0].startsWith("\t") || 
-                       ["regular", "priority", "357", "byu", "video call"].includes(colA.toLowerCase());
+  const end = rows.findIndex((row, index) =>
+    index > start && TAB_DEFINITIONS.some((tab) => tab.tabKey !== definition.tabKey && row.some((cell) => isMarker(cell, tab))),
+  );
+  return rows.slice(start, end < 0 ? undefined : end);
+}
 
-      const kpiParam: KpiParameter = {
-        name: colA,
-        target: target,
-        bobotTarget: bobotTarget || undefined,
-        mtdAchievement: mtd || undefined,
-        robotAchievement: bobotAch || undefined,
-        dailyValues: Object.keys(dailyValues).length > 0 ? dailyValues : undefined,
-        isSubRow,
-      };
+function findPeriodRow(rows: string[][], headerRow: number, periodColumn: number, period: string): string[] | undefined {
+  for (let rowIndex = headerRow + 1; rowIndex < rows.length; rowIndex++) {
+    const row = rows[rowIndex] ?? [];
+    if (matchesMonth(row[periodColumn], period)) return row;
+    if (rowIndex > headerRow + 36 && clean(row[periodColumn]) === "") break;
+  }
+  return undefined;
+}
 
-      sectionsMap[currentSectionName].parameters.push(kpiParam);
+function classifySection(parameterName: string): string {
+  const name = normalize(parameterName);
+  if (/(sales|retention|caps)/.test(name)) return "Revenue";
+  if (/(tnps|repeat|fcr|customer|satisfaction)/.test(name)) return "Customer Experience";
+  return "Internal Process";
+}
+
+function comparableName(value: string): string {
+  return normalize(value)
+    .replace("salesinteractionratio", "salesratio")
+    .replace("retentionrate", "retention")
+    .replace("capsnumber", "caps");
+}
+
+function parseDailyValues(rows: string[][], definition: TabDefinition, period: string): Map<string, Record<number, string>> {
+  const segment = tabSegment(rows, definition);
+  const source = segment.length > 0 ? segment : definition.tabKey === "callCenter" ? rows : [];
+  const headerIndex = source.findIndex((row) => normalize(row[0]) === "periode");
+  if (headerIndex < 0) return new Map();
+
+  const headers = source[headerIndex];
+  const result = new Map<string, Record<number, string>>();
+
+  for (let rowIndex = headerIndex + 1; rowIndex < source.length; rowIndex++) {
+    const row = source[rowIndex] ?? [];
+    const day = dayFromDate(row[0], period);
+    if (!day) continue;
+
+    for (let column = 1; column < headers.length; column++) {
+      const name = clean(headers[column]);
+      const value = clean(row[column]);
+      if (!name || !value) continue;
+      const key = comparableName(name);
+      const daily = result.get(key) ?? {};
+      daily[day] = value;
+      result.set(key, daily);
     }
   }
 
-  // Convert sections map to list
-  const sectionsList: KpiSection[] = Object.keys(sectionsMap).map((name) => ({
-    name,
-    weight: sectionsMap[name].weight,
-    parameters: sectionsMap[name].parameters,
-  }));
+  return result;
+}
 
-  // Fallback default highlights if none parsed from spreadsheet
-  const finalHighlights = summaryHighlight.length > 0 ? summaryHighlight : [
-    `Pencapaian KPI ${tabName} bulan ini berjalan stabil.`,
-    "Beberapa parameter utama telah memenuhi target MTD.",
-    "Perlu pengawasan berkelanjutan pada pencapaian harian."
-  ];
+function parseRekapTab(rows: string[][], dailyRows: string[][], definition: TabDefinition, period: string): TabData | null {
+  const segment = tabSegment(rows, definition);
+  if (segment.length === 0) return null;
 
+  const dailyValues = parseDailyValues(dailyRows, definition, period);
+  const sectionWeights: Record<string, number> = {
+    Revenue: 0,
+    "Customer Experience": 0,
+    "Internal Process": 0,
+  };
+  const sectionParameters: Record<string, KpiParameter[]> = {
+    Revenue: [],
+    "Customer Experience": [],
+    "Internal Process": [],
+  };
+  let totalAchievement = 0;
+
+  for (let rowIndex = 0; rowIndex < segment.length; rowIndex++) {
+    const row = segment[rowIndex] ?? [];
+
+    for (let column = 0; column < row.length; column++) {
+      const heading = normalize(row[column]);
+      if (heading === "totalachievement") {
+        const periodColumn = Math.max(0, column - 1);
+        const periodRow = findPeriodRow(segment, rowIndex, periodColumn, period);
+        totalAchievement = parsePercentage(periodRow?.[column], totalAchievement);
+      }
+
+      const sectionByHeader: Record<string, string> = {
+        totalrevenue: "Revenue",
+        totalcx: "Customer Experience",
+        totalcustomerexperience: "Customer Experience",
+        totalinternalprocess: "Internal Process",
+      };
+      const sectionName = sectionByHeader[heading];
+      if (sectionName) {
+        const periodColumn = Math.max(0, row.findIndex((cell, index) => index <= column && normalize(cell) === "periode"));
+        const periodRow = findPeriodRow(segment, rowIndex, periodColumn, period);
+        sectionWeights[sectionName] = parsePercentage(periodRow?.[column], sectionWeights[sectionName]);
+      }
+
+      // A KPI block has its title directly above a "Periode" header.
+      if (clean(row[column]) && normalize(segment[rowIndex + 1]?.[column]) === "periode") {
+        const parameterName = clean(row[column]);
+        if (isMarker(parameterName, definition)) continue;
+        const header = segment[rowIndex + 1] ?? [];
+        const periodRow = findPeriodRow(segment, rowIndex + 1, column, period);
+        if (!periodRow) continue;
+
+        const findHeader = (names: string[]) => {
+          const index = header.findIndex((cell, headerColumn) => headerColumn >= column && names.includes(normalize(cell)));
+          return index >= 0 ? clean(periodRow[index]) : "";
+        };
+        const daily = dailyValues.get(comparableName(parameterName));
+        const parameter: KpiParameter = {
+          name: parameterName,
+          target: findHeader(["target"]),
+          bobotTarget: findHeader(["bobottarget"]) || undefined,
+          mtdAchievement: findHeader(["mtdachievement"]) || undefined,
+          robotAchievement: findHeader(["bobotachievement"]) || undefined,
+          dailyValues: daily && Object.keys(daily).length > 0 ? daily : undefined,
+          isSubRow: ["regular", "priority", "357", "byu", "videocall"].includes(normalize(parameterName)),
+        };
+        sectionParameters[classifySection(parameterName)].push(parameter);
+      }
+    }
+  }
+
+  const fallback = mockDashboardData.tabs[definition.fallbackIndex];
+  const sections: KpiSection[] = Object.entries(sectionParameters)
+    .filter(([, parameters]) => parameters.length > 0)
+    .map(([name, parameters]) => ({ name, weight: sectionWeights[name], parameters }));
+
+  if (sections.length === 0) return null;
   return {
-    tabName,
-    tabKey,
-    totalAchievement,
-    sections: sectionsList,
-    summaryHighlight: finalHighlights,
+    tabName: definition.tabName,
+    tabKey: definition.tabKey,
+    totalAchievement: totalAchievement || fallback.totalAchievement,
+    sections,
+    summaryHighlight: fallback.summaryHighlight,
   };
 }
 
-export async function getKpiData(): Promise<KpiDashboardData> {
-  // Use the spreadsheet ID provided by the user
-  const sheetId = process.env.GOOGLE_SHEET_ID && !process.env.GOOGLE_SHEET_ID.includes("1AbCDefGh")
-    ? process.env.GOOGLE_SHEET_ID
-    : "1zYDTRPdQo8OuXP1MLRu3FbpSaEXb-zMEdY3jabmvXTI"; // Fallback to user's real sheet ID
+function periodLabel(period: string): string {
+  const { year, month } = periodParts(period);
+  return new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric", timeZone: "UTC" }).format(
+    new Date(Date.UTC(year, month - 1, 1)),
+  );
+}
 
-  const clientEmail = process.env.GOOGLE_SHEETS_CLIENT_EMAIL;
-  const privateKey = process.env.GOOGLE_SHEETS_PRIVATE_KEY;
-
-  const isAuthConfigured = clientEmail && privateKey && !clientEmail.includes("xxxx@");
+export async function getKpiData(period = DEFAULT_PERIOD): Promise<KpiDashboardData> {
+  const sheetId = process.env.GOOGLE_SHEET_ID || "1zYDTRPdQo8OuXP1MLRu3FbpSaEXb-zMEdY3jabmvXTI";
+  const authenticated = Boolean(process.env.GOOGLE_SHEETS_CLIENT_EMAIL && process.env.GOOGLE_SHEETS_PRIVATE_KEY);
 
   try {
-    let callCenterRows: string[][] = [];
-    let eCareRows: string[][] = [];
+    const [rekapRows, dailyRows] = authenticated
+      ? await Promise.all([fetchSheetRange("'All Rekap'!A1:AZ500"), fetchSheetRange("'Daily'!A1:AZ500")])
+      : await Promise.all([fetchPublicSheetCsv(sheetId, "All Rekap"), fetchPublicSheetCsv(sheetId, "Daily")]);
 
-    if (isAuthConfigured) {
-      console.log("Fetching Google Sheets using authenticated API...");
-      [callCenterRows, eCareRows] = await Promise.all([
-        fetchSheetRange("'Daily Call Center'!A1:AJ45"),
-        fetchSheetRange("'Daily eCare'!A1:AJ45"),
-      ]);
-    } else {
-      console.log("Fetching Google Sheets using public visualization API...");
-      [callCenterRows, eCareRows] = await Promise.all([
-        fetchPublicSheetCsv(sheetId, "Daily Call Center"),
-        fetchPublicSheetCsv(sheetId, "Daily eCare"),
-      ]);
-    }
+    const tabs = TAB_DEFINITIONS.map((definition) =>
+      parseRekapTab(rekapRows, dailyRows, definition, period) ?? mockDashboardData.tabs[definition.fallbackIndex],
+    );
 
-    const tabs: TabData[] = [];
-
-    if (callCenterRows && callCenterRows.length > 0) {
-      tabs.push(parseTabSheet(callCenterRows, "Call Center", "callCenter"));
-    } else {
-      tabs.push(mockDashboardData.tabs[0]);
-    }
-
-    if (eCareRows && eCareRows.length > 0) {
-      tabs.push(parseTabSheet(eCareRows, "e-Care", "eCare"));
-    } else {
-      tabs.push(mockDashboardData.tabs[1]);
-    }
-
-    return {
-      tabs,
-      selectedPeriod: "July 2026",
-    };
+    return { tabs, selectedPeriod: periodLabel(period) };
   } catch (error) {
     console.error("Error fetching or parsing Google Sheets data:", error);
-    return mockDashboardData;
+    return { ...mockDashboardData, selectedPeriod: periodLabel(period) };
   }
 }
