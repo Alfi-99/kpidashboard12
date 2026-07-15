@@ -56,7 +56,11 @@ function parseCSV(csvText: string): string[][] {
 }
 
 async function fetchPublicSheetCsv(sheetId: string, sheetName: string): Promise<string[][]> {
-  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
+  // The regular export endpoint preserves merged title rows in All Rekap.
+  // GViz treats those rows as inferred headers and drops KPI names.
+  const url = sheetName === "All Rekap"
+    ? `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv`
+    : `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
   const response = await fetch(url, { cache: "no-store" });
   if (!response.ok) throw new Error(`Failed to fetch ${sheetName}: ${response.status}`);
   return parseCSV(await response.text());
@@ -134,20 +138,23 @@ function comparableName(value: string): string {
 }
 
 function parseDailyValues(rows: string[][], definition: TabDefinition, period: string): Map<string, Record<number, string>> {
-  const segment = tabSegment(rows, definition);
-  const source = segment.length > 0 ? segment : definition.tabKey === "callCenter" ? rows : [];
-  const headerIndex = source.findIndex((row) => normalize(row[0]) === "periode");
-  if (headerIndex < 0) return new Map();
-
-  const headers = source[headerIndex];
+  const markerRow = rows.findIndex((row) => row.some((cell) => isMarker(cell, definition)));
+  if (markerRow < 0) return new Map();
+  const markerColumn = rows[markerRow].findIndex((cell) => isMarker(cell, definition));
+  const nextMarkerColumn = TAB_DEFINITIONS
+    .filter((tab) => tab.tabKey !== definition.tabKey)
+    .map((tab) => rows[markerRow].findIndex((cell) => isMarker(cell, tab)))
+    .find((column) => column > markerColumn) ?? rows[markerRow].length;
+  const headerIndex = markerRow + 1;
+  const headers = rows[headerIndex] ?? [];
   const result = new Map<string, Record<number, string>>();
 
-  for (let rowIndex = headerIndex + 1; rowIndex < source.length; rowIndex++) {
-    const row = source[rowIndex] ?? [];
-    const day = dayFromDate(row[0], period);
+  for (let rowIndex = headerIndex + 1; rowIndex < rows.length; rowIndex++) {
+    const row = rows[rowIndex] ?? [];
+    const day = dayFromDate(row[markerColumn], period);
     if (!day) continue;
 
-    for (let column = 1; column < headers.length; column++) {
+    for (let column = markerColumn + 1; column < nextMarkerColumn; column++) {
       const name = clean(headers[column]);
       const value = clean(row[column]);
       if (!name || !value) continue;
@@ -238,7 +245,7 @@ function parseRekapTab(rows: string[][], dailyRows: string[][], definition: TabD
   return {
     tabName: definition.tabName,
     tabKey: definition.tabKey,
-    totalAchievement: totalAchievement || fallback.totalAchievement,
+    totalAchievement,
     sections,
     summaryHighlight: fallback.summaryHighlight,
   };
