@@ -3,6 +3,7 @@ import { mockDashboardData } from "./mockDataNew";
 
 const DEFAULT_PERIOD = "2026-07";
 const PUBLIC_SHEET_ID = "1zYDTRPdQo8OuXP1MLRu3FbpSaEXb-zMEdY3jabmvXTI";
+const DAILY_SHEET_GID = "781575490";
 
 type TabDefinition = {
   tabName: string;
@@ -58,9 +59,10 @@ function parseCSV(csvText: string): string[][] {
 async function fetchPublicSheetCsv(sheetId: string, sheetName: string): Promise<string[][]> {
   // The regular export endpoint preserves merged title rows in All Rekap.
   // GViz treats those rows as inferred headers and drops KPI names.
+  const cacheBust = Date.now();
   const url = sheetName === "All Rekap"
-    ? `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv`
-    : `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
+    ? `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&t=${cacheBust}`
+    : `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${DAILY_SHEET_GID}&t=${cacheBust}`;
   const response = await fetch(url, { cache: "no-store" });
   if (!response.ok) throw new Error(`Failed to fetch ${sheetName}: ${response.status}`);
   return parseCSV(await response.text());
