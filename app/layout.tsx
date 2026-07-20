@@ -26,7 +26,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="id" className={`${plusJakartaSans.variable} ${outfit.variable} antialiased`} suppressHydrationWarning>
+    <html lang="id" data-theme="light" className={`${plusJakartaSans.variable} ${outfit.variable} antialiased`} suppressHydrationWarning>
       <body className="font-body min-h-dvh">
         {children}
       </body>

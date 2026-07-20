@@ -163,9 +163,9 @@ export default function KpiSectionTable({
               {/* Scrollable: Days */}
               {dayColumns.map((day) => (
                 <th key={day} style={{
-                  width: "38px",
-                  padding: "12px 2px",
-                  fontSize: "10px",
+                  width: "54px",
+                  padding: "12px 4px",
+                  fontSize: "11px",
                   fontWeight: 700,
                   color: "#FFFFFF",
                   textAlign: "center",
@@ -285,8 +285,8 @@ export default function KpiSectionTable({
                     const cellVal = param.dailyValues?.[day];
                     return (
                       <td key={day} style={{
-                        padding: "12px 2px",
-                        fontSize: "10px",
+                        padding: "12px 4px",
+                        fontSize: "11px",
                         color: "var(--text-secondary)",
                         fontWeight: 600,
                         textAlign: "center",

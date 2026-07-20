@@ -62,6 +62,23 @@
   --badge-layanan-text: #ff8ca3;
 
   --radius: 0.75rem;
+
+  /* Aliases for compatibility/backward styling support */
+  --color-primary: var(--accent-primary);
+  --color-primary-light: var(--accent-bg);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-border: var(--border-default);
+  --color-status-achieved: var(--color-success);
+  --color-status-missed: var(--color-danger);
+  --color-status-partial: var(--color-warning);
+  --color-status-pending: var(--bg-tertiary);
+  --color-score-good: var(--color-success);
+  --color-score-warning: var(--color-warning);
+  --color-score-bad: var(--color-danger);
+  --table-header-bg: var(--bg-table-header);
+  --table-row-height: 48px;
 }
 
 /* === LIGHT MODE (putih) === */
@@ -117,6 +134,23 @@
 
   --badge-layanan-bg: rgba(200, 16, 46, 0.06);
   --badge-layanan-text: #c8102e;
+
+  /* Aliases for compatibility/backward styling support */
+  --color-primary: var(--accent-primary);
+  --color-primary-light: var(--accent-bg);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-border: var(--border-default);
+  --color-status-achieved: var(--color-success);
+  --color-status-missed: var(--color-danger);
+  --color-status-partial: var(--color-warning);
+  --color-status-pending: var(--bg-tertiary);
+  --color-score-good: var(--color-success);
+  --color-score-warning: var(--color-warning);
+  --color-score-bad: var(--color-danger);
+  --table-header-bg: var(--bg-table-header);
+  --table-row-height: 48px;
 }
 
 /* ============================================================

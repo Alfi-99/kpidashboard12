@@ -18,7 +18,7 @@ interface KpiDashboardClientProps {
 export default function KpiDashboardClient({ dashboardData }: KpiDashboardClientProps) {
   const [activeTab, setActiveTab] = useState(dashboardData.tabs[0]?.tabKey || "callCenter");
   const [selectedPeriod, setSelectedPeriod] = useState("2026-07");
-  const [isDark, setIsDark] = useState(true);
+  const [isDark, setIsDark] = useState(false);
   const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
 
   const { data: liveData, isValidating, mutate } = useSWR<KpiDashboardData>(`/api/kpi?period=${selectedPeriod}`, fetcher, {
