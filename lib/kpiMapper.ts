@@ -60,9 +60,14 @@ async function fetchPublicSheetCsv(sheetId: string, sheetName: string): Promise<
   // The regular export endpoint preserves merged title rows in All Rekap.
   // GViz treats those rows as inferred headers and drops KPI names.
   const cacheBust = Date.now();
-  const url = sheetName === "All Rekap"
-    ? `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&t=${cacheBust}`
-    : `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${DAILY_SHEET_GID}&t=${cacheBust}`;
+  let url = "";
+  if (sheetName === "All Rekap") {
+    url = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&t=${cacheBust}`;
+  } else if (sheetName === "Daily") {
+    url = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${DAILY_SHEET_GID}&t=${cacheBust}`;
+  } else {
+    url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}&t=${cacheBust}`;
+  }
   const response = await fetch(url, { cache: "no-store" });
   if (!response.ok) throw new Error(`Failed to fetch ${sheetName}: ${response.status}`);
   return parseCSV(await response.text());
@@ -170,7 +175,58 @@ function parseDailyValues(rows: string[][], definition: TabDefinition, period: s
   return result;
 }
 
-function parseRekapTab(rows: string[][], dailyRows: string[][], definition: TabDefinition, period: string): TabData | null {
+function parseFreetext(freetextRows: string[][]): Record<string, string[]> {
+  const result: Record<string, string[]> = {
+    callCenter: [],
+    eCare: [],
+  };
+  if (!freetextRows || freetextRows.length === 0) return result;
+
+  let callCenterCol = 0;
+  let eCareCol = 5;
+
+  const headerRow = freetextRows[0] ?? [];
+  for (let col = 0; col < headerRow.length; col++) {
+    const text = normalize(headerRow[col]);
+    if (text.includes("callcenter")) {
+      callCenterCol = col;
+    } else if (text.includes("ecare")) {
+      eCareCol = col;
+    }
+  }
+
+  for (let r = 1; r < freetextRows.length; r++) {
+    const row = freetextRows[r] ?? [];
+
+    let ccText = "";
+    for (let c = callCenterCol; c < eCareCol && c < row.length; c++) {
+      if (clean(row[c])) {
+        ccText = clean(row[c]);
+        break;
+      }
+    }
+    if (ccText) result.callCenter.push(ccText);
+
+    let ecText = "";
+    for (let c = eCareCol; c < row.length; c++) {
+      if (clean(row[c])) {
+        ecText = clean(row[c]);
+        break;
+      }
+    }
+    if (ecText) result.eCare.push(ecText);
+  }
+
+  return result;
+}
+
+function parseRekapTab(
+  rows: string[][],
+  dailyRows: string[][],
+  definition: TabDefinition,
+  period: string,
+  freetextHighlights?: string[],
+): TabData | null {
   const segment = tabSegment(rows, definition);
   if (segment.length === 0) return null;
 
@@ -244,12 +300,17 @@ function parseRekapTab(rows: string[][], dailyRows: string[][], definition: TabD
     .map(([name, parameters]) => ({ name, weight: sectionWeights[name], parameters }));
 
   if (sections.length === 0) return null;
+
+  const summaryHighlight = freetextHighlights && freetextHighlights.length > 0
+    ? freetextHighlights
+    : fallback.summaryHighlight;
+
   return {
     tabName: definition.tabName,
     tabKey: definition.tabKey,
     totalAchievement,
     sections,
-    summaryHighlight: fallback.summaryHighlight,
+    summaryHighlight,
   };
 }
 
@@ -270,14 +331,18 @@ export async function getKpiData(period = DEFAULT_PERIOD): Promise<KpiDashboardD
     : PUBLIC_SHEET_ID;
 
   try {
-    const [rekapRows, dailyRows] = await Promise.all([
+    const [rekapRows, dailyRows, freetextRows] = await Promise.all([
       fetchPublicSheetCsv(sheetId, "All Rekap"),
       fetchPublicSheetCsv(sheetId, "Daily"),
+      fetchPublicSheetCsv(sheetId, "Freetext").catch(() => []),
     ]);
 
-    const tabs = TAB_DEFINITIONS.map((definition) =>
-      parseRekapTab(rekapRows, dailyRows, definition, period) ?? mockDashboardData.tabs[definition.fallbackIndex],
-    );
+    const freetextHighlightsMap = parseFreetext(freetextRows);
+
+    const tabs = TAB_DEFINITIONS.map((definition) => {
+      const highlights = freetextHighlightsMap[definition.tabKey];
+      return parseRekapTab(rekapRows, dailyRows, definition, period, highlights) ?? mockDashboardData.tabs[definition.fallbackIndex];
+    });
 
     return { tabs, selectedPeriod: periodLabel(period) };
   } catch (error) {
