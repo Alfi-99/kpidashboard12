@@ -9,15 +9,40 @@ interface KpiSectionTableProps {
   animationDelay?: number;
 }
 
+const getDynamicColor = (targetNum: number, mtdNum: number) => {
+  if (isNaN(targetNum) || isNaN(mtdNum)) return null;
+  if (targetNum === 0) {
+    return mtdNum >= targetNum ? "var(--color-success)" : "var(--color-danger)";
+  }
+  
+  const ratio = mtdNum / targetNum;
+  
+  // Bulatkan ke kelipatan 5% terdekat ke bawah agar perubahan warnanya "nge-step" tiap 5%
+  const steppedRatio = Math.floor(ratio * 20) / 20;
+  
+  if (steppedRatio >= 1) {
+    // Hijau: Range 1.00 sampai 1.25.
+    // Tiap naik 5% di atas target, hijaunya digelapkan 10% (agresif).
+    const excess = Math.min(steppedRatio - 1, 0.25);
+    const greenPct = Math.round(100 - (excess * 200)); 
+    return `color-mix(in srgb, var(--color-success) ${greenPct}%, black)`;
+  } else {
+    // Merah: Range 0.50 sampai 0.95.
+    // Di bawah 50% warna merah penuh. Mulai 50% ke atas, merah semakin muda tiap 5%.
+    const effectiveRatio = Math.max(0, steppedRatio - 0.5) * 2; 
+    const validRatio = Math.min(1, Math.max(0, effectiveRatio));
+    const redPct = Math.round(100 - (validRatio * 40)); 
+    return `color-mix(in srgb, var(--color-danger) ${redPct}%, white)`;
+  }
+};
+
 const getMtdColor = (targetStr?: string, mtdStr?: string) => {
   if (!targetStr || !mtdStr || mtdStr === "—") return null;
   
   const targetNum = parseFloat(targetStr.replace(/,/g, ".").replace(/[^0-9.-]+/g, ""));
   const mtdNum = parseFloat(mtdStr.replace(/,/g, ".").replace(/[^0-9.-]+/g, ""));
   
-  if (isNaN(targetNum) || isNaN(mtdNum)) return null;
-  
-  return mtdNum >= targetNum ? "var(--color-success)" : "var(--color-danger)";
+  return getDynamicColor(targetNum, mtdNum);
 };
 
 export default function KpiSectionTable({
@@ -29,6 +54,8 @@ export default function KpiSectionTable({
 
   const tTarget = section.target ?? 0;
   const tAchievement = section.weight;
+  
+  const headerBgColor = getDynamicColor(tTarget, tAchievement) || (tAchievement >= tTarget ? "var(--color-success)" : "var(--color-danger)");
 
   return (
     <div
@@ -73,10 +100,10 @@ export default function KpiSectionTable({
             fontSize: "11px",
             fontWeight: 700,
             color: "#FFFFFF",
-            backgroundColor: tAchievement >= tTarget ? "var(--color-success)" : "var(--color-danger)",
+            backgroundColor: headerBgColor,
             padding: "3px 10px",
             borderRadius: "6px",
-            border: `1px solid ${tAchievement >= tTarget ? "var(--color-success)" : "var(--color-danger)"}`,
+            border: `1px solid ${headerBgColor}`,
           }}>
             Realisasi: {tAchievement}%
           </span>
