@@ -32,7 +32,8 @@ export interface KpiParameter {
 
 export interface KpiSection {
   name: string;          // e.g. "Revenue", "Customer Experience", "Internal Process"
-  weight: number;        // percentage weight, e.g. 20, 45, 35
+  weight: number;        // percentage weight, e.g. 20, 45, 35 (Realisasi)
+  target?: number;       // e.g. 20, 45, 35 (Target)
   parameters: KpiParameter[];
 }
 

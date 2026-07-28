@@ -9,12 +9,26 @@ interface KpiSectionTableProps {
   animationDelay?: number;
 }
 
+const getMtdColor = (targetStr?: string, mtdStr?: string) => {
+  if (!targetStr || !mtdStr || mtdStr === "—") return null;
+  
+  const targetNum = parseFloat(targetStr.replace(/,/g, ".").replace(/[^0-9.-]+/g, ""));
+  const mtdNum = parseFloat(mtdStr.replace(/,/g, ".").replace(/[^0-9.-]+/g, ""));
+  
+  if (isNaN(targetNum) || isNaN(mtdNum)) return null;
+  
+  return mtdNum >= targetNum ? "var(--color-success)" : "var(--color-danger)";
+};
+
 export default function KpiSectionTable({
   section,
   daysCount,
   animationDelay = 0,
 }: KpiSectionTableProps) {
   const dayColumns = Array.from({ length: daysCount }, (_, i) => i + 1);
+
+  const tTarget = section.target ?? 0;
+  const tAchievement = section.weight;
 
   return (
     <div
@@ -28,7 +42,7 @@ export default function KpiSectionTable({
       }}
     >
       {/* Section Header */}
-      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
         <h3 className="font-heading" style={{
           fontSize: "15px",
           fontWeight: 800,
@@ -37,18 +51,36 @@ export default function KpiSectionTable({
         }}>
           {section.name}
         </h3>
-        <span style={{
-          display: "inline-block",
-          fontSize: "11px",
-          fontWeight: 700,
-          color: "var(--accent-primary)",
-          backgroundColor: "var(--accent-bg)",
-          padding: "3px 10px",
-          borderRadius: "6px",
-          border: `1px solid var(--border-strong)`,
-        }}>
-          {section.weight}%
-        </span>
+        
+        <div style={{ display: "flex", gap: "8px" }}>
+          <span style={{
+            display: "inline-flex",
+            alignItems: "center",
+            fontSize: "11px",
+            fontWeight: 700,
+            color: "var(--text-secondary)",
+            backgroundColor: "var(--bg-tertiary)",
+            padding: "3px 10px",
+            borderRadius: "6px",
+            border: `1px solid var(--border-strong)`,
+          }}>
+            Target: {tTarget}%
+          </span>
+          
+          <span style={{
+            display: "inline-flex",
+            alignItems: "center",
+            fontSize: "11px",
+            fontWeight: 700,
+            color: "#FFFFFF",
+            backgroundColor: tAchievement >= tTarget ? "var(--color-success)" : "var(--color-danger)",
+            padding: "3px 10px",
+            borderRadius: "6px",
+            border: `1px solid ${tAchievement >= tTarget ? "var(--color-success)" : "var(--color-danger)"}`,
+          }}>
+            Realisasi: {tAchievement}%
+          </span>
+        </div>
       </div>
 
       {/* Table Wrapper */}
@@ -252,10 +284,10 @@ export default function KpiSectionTable({
                     zIndex: 2,
                     padding: "12px 10px",
                     fontSize: "11.5px",
-                    fontWeight: 600,
-                    color: "var(--accent-secondary)",
+                    fontWeight: 700,
+                    color: getMtdColor(param.target, param.mtdAchievement) ? "#FFFFFF" : "var(--text-primary)",
                     textAlign: "center",
-                    background: isSub ? "var(--bg-tertiary)" : "var(--bg-card)",
+                    background: getMtdColor(param.target, param.mtdAchievement) || (isSub ? "var(--bg-tertiary)" : "var(--bg-card)"),
                     borderBottom: `1px solid var(--border-subtle)`,
                     borderRight: `1px solid var(--border-subtle)`,
                   }}>

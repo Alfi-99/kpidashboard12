@@ -236,6 +236,11 @@ function parseRekapTab(
     "Customer Experience": 0,
     "Internal Process": 0,
   };
+  const sectionTargets: Record<string, number> = {
+    Revenue: 0,
+    "Customer Experience": 0,
+    "Internal Process": 0,
+  };
   const sectionParameters: Record<string, KpiParameter[]> = {
     Revenue: [],
     "Customer Experience": [],
@@ -265,6 +270,9 @@ function parseRekapTab(
         const periodColumn = Math.max(0, row.findIndex((cell, index) => index <= column && normalize(cell) === "periode"));
         const periodRow = findPeriodRow(segment, rowIndex, periodColumn, period);
         sectionWeights[sectionName] = parsePercentage(periodRow?.[column], sectionWeights[sectionName]);
+        if (rowIndex > 0) {
+          sectionTargets[sectionName] = parsePercentage(segment[rowIndex - 1]?.[column], sectionTargets[sectionName]);
+        }
       }
 
       // A KPI block has its title directly above a "Periode" header.
@@ -297,7 +305,12 @@ function parseRekapTab(
   const fallback = mockDashboardData.tabs[definition.fallbackIndex];
   const sections: KpiSection[] = Object.entries(sectionParameters)
     .filter(([, parameters]) => parameters.length > 0)
-    .map(([name, parameters]) => ({ name, weight: sectionWeights[name], parameters }));
+    .map(([name, parameters]) => ({ 
+      name, 
+      weight: sectionWeights[name], 
+      target: sectionTargets[name],
+      parameters 
+    }));
 
   if (sections.length === 0) return null;
 

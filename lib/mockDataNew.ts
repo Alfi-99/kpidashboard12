@@ -14,7 +14,8 @@ export const mockDashboardData: KpiDashboardData = {
       sections: [
         {
           name: "Revenue",
-          weight: 20,
+          weight: 19.52,
+          target: 20,
           parameters: [
             {
               name: "Sales Ratio",
@@ -41,7 +42,8 @@ export const mockDashboardData: KpiDashboardData = {
         },
         {
           name: "Customer Experience",
-          weight: 45,
+          weight: 44.82,
+          target: 45,
           parameters: [
             { name: "tNPS Mobile", target: "95%", dailyValues: { 1: "94%", 2: "95.5%", 15: "95%", 30: "95.2%", 31: "95.6%" }, mtdAchievement: "95.3%", robotAchievement: "96%" },
             { name: "tNPS Fixed", target: "85%", dailyValues: { 1: "84%", 2: "85%", 15: "85.2%", 30: "84.8%", 31: "85.1%" }, mtdAchievement: "85.0%", robotAchievement: "86%" },
@@ -55,7 +57,8 @@ export const mockDashboardData: KpiDashboardData = {
         },
         {
           name: "Internal Process",
-          weight: 35,
+          weight: 33.62,
+          target: 35,
           parameters: [
             { name: "Service Level", target: "96%", dailyValues: { 1: "96.2%", 2: "95.8%" }, mtdAchievement: "96.0%", robotAchievement: "96.5%" },
             { name: "Regular", target: "96%", isSubRow: true, dailyValues: { 1: "96%", 2: "95.5%" }, mtdAchievement: "95.8%", robotAchievement: "96%" },
@@ -88,6 +91,7 @@ export const mockDashboardData: KpiDashboardData = {
         {
           name: "Revenue",
           weight: 10,
+          target: 10,
           parameters: [
             { name: "Sales Ratio", target: "1%", dailyValues: { 1: "0.9%", 2: "1.1%", 15: "1.0%", 30: "1.0%" }, mtdAchievement: "1.0%", robotAchievement: "1.2%" },
           ],
@@ -95,6 +99,7 @@ export const mockDashboardData: KpiDashboardData = {
         {
           name: "Customer Experience",
           weight: 45,
+          target: 45,
           parameters: [
             { name: "tNPS Mobile", target: "85%", dailyValues: { 1: "84.5%", 2: "85.2%", 15: "85.0%" }, mtdAchievement: "85.0%", robotAchievement: "86%" },
             { name: "tNPS Fixed", target: "85%", dailyValues: { 1: "85%", 2: "84.8%", 15: "85.1%" }, mtdAchievement: "85.1%", robotAchievement: "86%" },
@@ -109,6 +114,7 @@ export const mockDashboardData: KpiDashboardData = {
         {
           name: "Internal Process",
           weight: 35,
+          target: 35,
           parameters: [
             { name: "Response Time", target: "4'", dailyValues: { 1: "4.1'", 2: "3.9'", 15: "4.0'" }, mtdAchievement: "4.0'", robotAchievement: "3.8'" },
             { name: "Response Time Email", target: "15'", dailyValues: { 1: "14.8'", 2: "15.2'", 15: "15.0'" }, mtdAchievement: "15.0'", robotAchievement: "14.5'" },
