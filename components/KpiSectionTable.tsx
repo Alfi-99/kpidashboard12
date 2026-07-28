@@ -9,13 +9,18 @@ interface KpiSectionTableProps {
   animationDelay?: number;
 }
 
-const getDynamicColor = (targetNum: number, mtdNum: number) => {
+const getDynamicColor = (targetNum: number, mtdNum: number, isLowerBetter: boolean = false) => {
   if (isNaN(targetNum) || isNaN(mtdNum)) return null;
   if (targetNum === 0) {
-    return mtdNum >= targetNum ? "var(--color-success)" : "var(--color-danger)";
+    if (isLowerBetter) {
+      return mtdNum <= targetNum ? "var(--color-success)" : "var(--color-danger)";
+    } else {
+      return mtdNum >= targetNum ? "var(--color-success)" : "var(--color-danger)";
+    }
   }
   
-  const ratio = mtdNum / targetNum;
+  // Jika lower is better, balik rasio pembagiannya (MTD lebih kecil = Rasio lebih besar)
+  const ratio = isLowerBetter ? (mtdNum === 0 ? Infinity : targetNum / mtdNum) : mtdNum / targetNum;
   
   // Bulatkan ke kelipatan 5% terdekat ke bawah agar perubahan warnanya "nge-step" tiap 5%
   const steppedRatio = Math.floor(ratio * 20) / 20;
@@ -36,13 +41,23 @@ const getDynamicColor = (targetNum: number, mtdNum: number) => {
   }
 };
 
-const getMtdColor = (targetStr?: string, mtdStr?: string) => {
+const getMtdColor = (paramName: string, targetStr?: string, mtdStr?: string) => {
   if (!targetStr || !mtdStr || mtdStr === "—") return null;
   
   const targetNum = parseFloat(targetStr.replace(/,/g, ".").replace(/[^0-9.-]+/g, ""));
   const mtdNum = parseFloat(mtdStr.replace(/,/g, ".").replace(/[^0-9.-]+/g, ""));
   
-  return getDynamicColor(targetNum, mtdNum);
+  const lowerIsBetterParams = [
+    "caps number",
+    "repeat mobile",
+    "repeat fixed",
+    "response time",
+    "response time email"
+  ];
+  
+  const isLowerBetter = lowerIsBetterParams.some(p => paramName.toLowerCase().includes(p));
+
+  return getDynamicColor(targetNum, mtdNum, isLowerBetter);
 };
 
 export default function KpiSectionTable({
@@ -312,9 +327,9 @@ export default function KpiSectionTable({
                     padding: "12px 10px",
                     fontSize: "11.5px",
                     fontWeight: 700,
-                    color: getMtdColor(param.target, param.mtdAchievement) ? "#FFFFFF" : "var(--text-primary)",
+                    color: getMtdColor(param.name, param.target, param.mtdAchievement) ? "#FFFFFF" : "var(--text-primary)",
                     textAlign: "center",
-                    background: getMtdColor(param.target, param.mtdAchievement) || (isSub ? "var(--bg-tertiary)" : "var(--bg-card)"),
+                    background: getMtdColor(param.name, param.target, param.mtdAchievement) || (isSub ? "var(--bg-tertiary)" : "var(--bg-card)"),
                     borderBottom: `1px solid var(--border-subtle)`,
                     borderRight: `1px solid var(--border-subtle)`,
                   }}>
