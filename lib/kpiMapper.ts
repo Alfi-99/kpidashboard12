@@ -278,7 +278,7 @@ function parseRekapTab(
       // A KPI block has its title directly above a "Periode" header.
       if (clean(row[column]) && normalize(segment[rowIndex + 1]?.[column]) === "periode") {
         const parameterName = clean(row[column]);
-        if (isMarker(parameterName, definition)) continue;
+        if (isMarker(parameterName, definition) || normalize(parameterName) === "target") continue;
         const header = segment[rowIndex + 1] ?? [];
         const periodRow = findPeriodRow(segment, rowIndex + 1, column, period);
         if (!periodRow) continue;
