@@ -3,6 +3,7 @@ import { mockDashboardData } from "./mockDataNew";
 
 const DEFAULT_PERIOD = "2026-07";
 const PUBLIC_SHEET_ID = "1zYDTRPdQo8OuXP1MLRu3FbpSaEXb-zMEdY3jabmvXTI";
+const ALL_REKAP_GID = "1217380245";
 const DAILY_SHEET_GID = "781575490";
 
 type TabDefinition = {
@@ -78,7 +79,7 @@ async function fetchPublicSheetCsv(sheetId: string, sheetName: string): Promise<
   const cacheBust = Date.now();
   let url = "";
   if (sheetName === "All Rekap") {
-    url = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&t=${cacheBust}`;
+    url = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${ALL_REKAP_GID}&t=${cacheBust}`;
   } else if (sheetName === "Daily") {
     url = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${DAILY_SHEET_GID}&t=${cacheBust}`;
   } else {
