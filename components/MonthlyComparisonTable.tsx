@@ -47,7 +47,7 @@ export default function MonthlyComparisonTable({
           <div
             style={{
               width: "4px",
-              height: "18px",
+              height: "20px",
               background: "linear-gradient(180deg, var(--red) 0%, var(--red-wine) 100%)",
               borderRadius: "2px",
             }}
@@ -67,12 +67,12 @@ export default function MonthlyComparisonTable({
           <span
             style={{
               fontSize: "11px",
-              fontWeight: 700,
-              color: "var(--accent-primary)",
-              backgroundColor: "rgba(177, 18, 38, 0.08)",
-              border: "1px solid rgba(177, 18, 38, 0.2)",
-              padding: "2px 8px",
-              borderRadius: "4px",
+              fontWeight: 800,
+              color: "#FFFFFF",
+              backgroundColor: "var(--red-wine)",
+              padding: "2px 10px",
+              borderRadius: "5px",
+              letterSpacing: "0.03em",
             }}
           >
             {period}
@@ -82,18 +82,19 @@ export default function MonthlyComparisonTable({
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <span
             style={{
-              fontSize: "10.5px",
+              fontSize: "11px",
               fontWeight: 700,
-              color: "var(--text-secondary)",
+              color: "var(--text-primary)",
               background: "var(--bg-tertiary)",
-              padding: "4px 10px",
+              padding: "5px 12px",
               borderRadius: "6px",
               border: "1px solid var(--border-strong)",
             }}
           >
-            Comparison: <strong style={{ color: "#38bdf8" }}>Bandung (BDG)</strong> vs{" "}
-            <strong style={{ color: "#a855f7" }}>Semarang (SMG)</strong> vs{" "}
-            <strong style={{ color: "#f59e0b" }}>Nasional</strong>
+            Komparasi:{" "}
+            <strong style={{ color: "#0284c7" }}>Bandung (BDG)</strong> vs{" "}
+            <strong style={{ color: "#7e22ce" }}>Semarang (SMG)</strong> vs{" "}
+            <strong style={{ color: "#d97706" }}>Nasional</strong>
           </span>
         </div>
       </div>
@@ -114,22 +115,23 @@ export default function MonthlyComparisonTable({
             width: "100%",
             borderCollapse: "separate",
             borderSpacing: 0,
-            fontSize: "12px",
+            fontSize: "11.5px",
           }}
         >
           <thead>
             {/* Top Header Row */}
-            <tr style={{ background: "var(--table-header-bg)" }}>
+            <tr>
               <th
                 rowSpan={2}
                 style={{
                   width: "42px",
                   textAlign: "center",
-                  padding: "10px 6px",
+                  padding: "11px 6px",
                   fontWeight: 800,
-                  fontSize: "11px",
+                  fontSize: "11.5px",
                   color: "#FFFFFF",
-                  borderRight: "1px solid rgba(255, 255, 255, 0.12)",
+                  background: "#0f172a",
+                  borderRight: "1px solid rgba(255, 255, 255, 0.15)",
                   borderBottom: "1px solid rgba(255, 255, 255, 0.15)",
                 }}
               >
@@ -138,13 +140,14 @@ export default function MonthlyComparisonTable({
               <th
                 rowSpan={2}
                 style={{
-                  minWidth: "210px",
+                  minWidth: "220px",
                   textAlign: "left",
-                  padding: "10px 14px",
+                  padding: "11px 14px",
                   fontWeight: 800,
-                  fontSize: "11px",
+                  fontSize: "11.5px",
                   color: "#FFFFFF",
-                  borderRight: "1px solid rgba(255, 255, 255, 0.12)",
+                  background: "#0f172a",
+                  borderRight: "1px solid rgba(255, 255, 255, 0.15)",
                   borderBottom: "1px solid rgba(255, 255, 255, 0.15)",
                 }}
               >
@@ -153,14 +156,15 @@ export default function MonthlyComparisonTable({
               <th
                 rowSpan={2}
                 style={{
-                  minWidth: "240px",
-                  maxWidth: "320px",
+                  minWidth: "260px",
+                  maxWidth: "340px",
                   textAlign: "left",
-                  padding: "10px 14px",
+                  padding: "11px 14px",
                   fontWeight: 800,
-                  fontSize: "11px",
+                  fontSize: "11.5px",
                   color: "#FFFFFF",
-                  borderRight: "1px solid rgba(255, 255, 255, 0.12)",
+                  background: "#0f172a",
+                  borderRight: "1px solid rgba(255, 255, 255, 0.15)",
                   borderBottom: "1px solid rgba(255, 255, 255, 0.15)",
                 }}
               >
@@ -169,14 +173,14 @@ export default function MonthlyComparisonTable({
               <th
                 rowSpan={2}
                 style={{
-                  width: "70px",
+                  width: "75px",
                   textAlign: "center",
-                  padding: "10px 6px",
+                  padding: "11px 6px",
                   fontWeight: 800,
-                  fontSize: "11px",
+                  fontSize: "11.5px",
                   color: "#FFFFFF",
-                  background: "rgba(177, 18, 38, 0.85)",
-                  borderRight: "1px solid rgba(255, 255, 255, 0.12)",
+                  background: "#b91c1c",
+                  borderRight: "1px solid rgba(255, 255, 255, 0.15)",
                   borderBottom: "1px solid rgba(255, 255, 255, 0.15)",
                 }}
               >
@@ -185,13 +189,14 @@ export default function MonthlyComparisonTable({
               <th
                 rowSpan={2}
                 style={{
-                  width: "65px",
+                  width: "70px",
                   textAlign: "center",
-                  padding: "10px 6px",
+                  padding: "11px 6px",
                   fontWeight: 800,
-                  fontSize: "11px",
+                  fontSize: "11.5px",
                   color: "#FFFFFF",
-                  borderRight: "1px solid rgba(255, 255, 255, 0.12)",
+                  background: "#1e293b",
+                  borderRight: "1px solid rgba(255, 255, 255, 0.2)",
                   borderBottom: "1px solid rgba(255, 255, 255, 0.15)",
                 }}
               >
@@ -201,64 +206,64 @@ export default function MonthlyComparisonTable({
                 colSpan={3}
                 style={{
                   textAlign: "center",
-                  padding: "8px 6px",
-                  fontWeight: 800,
-                  fontSize: "11px",
-                  color: "#fde68a",
-                  background: "rgba(245, 158, 11, 0.2)",
-                  borderRight: "1px solid rgba(255, 255, 255, 0.12)",
-                  borderBottom: "1px solid rgba(255, 255, 255, 0.15)",
+                  padding: "9px 6px",
+                  fontWeight: 900,
+                  fontSize: "11.5px",
+                  color: "#FFFFFF",
+                  background: "linear-gradient(135deg, #d97706 0%, #b45309 100%)",
+                  borderRight: "1px solid rgba(255, 255, 255, 0.2)",
+                  borderBottom: "1px solid rgba(255, 255, 255, 0.2)",
                   letterSpacing: "0.04em",
                 }}
               >
-                Nasional
+                NASIONAL
               </th>
               <th
                 colSpan={2}
                 style={{
                   textAlign: "center",
-                  padding: "8px 6px",
-                  fontWeight: 800,
-                  fontSize: "11px",
-                  color: "#7dd3fc",
-                  background: "rgba(56, 189, 248, 0.2)",
-                  borderRight: "1px solid rgba(255, 255, 255, 0.12)",
-                  borderBottom: "1px solid rgba(255, 255, 255, 0.15)",
+                  padding: "9px 6px",
+                  fontWeight: 900,
+                  fontSize: "11.5px",
+                  color: "#FFFFFF",
+                  background: "linear-gradient(135deg, #0284c7 0%, #0369a1 100%)",
+                  borderRight: "1px solid rgba(255, 255, 255, 0.2)",
+                  borderBottom: "1px solid rgba(255, 255, 255, 0.2)",
                   letterSpacing: "0.04em",
                 }}
               >
-                Bandung (BDG)
+                BANDUNG (BDG)
               </th>
               <th
                 colSpan={2}
                 style={{
                   textAlign: "center",
-                  padding: "8px 6px",
-                  fontWeight: 800,
-                  fontSize: "11px",
-                  color: "#d8b4fe",
-                  background: "rgba(168, 85, 247, 0.2)",
-                  borderBottom: "1px solid rgba(255, 255, 255, 0.15)",
+                  padding: "9px 6px",
+                  fontWeight: 900,
+                  fontSize: "11.5px",
+                  color: "#FFFFFF",
+                  background: "linear-gradient(135deg, #7e22ce 0%, #6b21a8 100%)",
+                  borderBottom: "1px solid rgba(255, 255, 255, 0.2)",
                   letterSpacing: "0.04em",
                 }}
               >
-                Semarang (SMG)
+                SEMARANG (SMG)
               </th>
             </tr>
 
             {/* Sub Header Row */}
-            <tr style={{ background: "var(--table-header-sub)" }}>
-              {/* Nasional subheaders */}
+            <tr>
+              {/* Nasional Subheaders */}
               <th
                 style={{
                   width: "75px",
                   textAlign: "center",
-                  padding: "6px 4px",
-                  fontSize: "10.5px",
+                  padding: "7px 4px",
+                  fontSize: "11px",
                   fontWeight: 700,
-                  color: "#fde68a",
-                  background: "rgba(245, 158, 11, 0.12)",
-                  borderRight: "1px solid rgba(255, 255, 255, 0.08)",
+                  color: "#FFFFFF",
+                  background: "#b45309",
+                  borderRight: "1px solid rgba(255, 255, 255, 0.15)",
                   borderBottom: "1px solid var(--border-strong)",
                 }}
               >
@@ -268,12 +273,12 @@ export default function MonthlyComparisonTable({
                 style={{
                   width: "85px",
                   textAlign: "center",
-                  padding: "6px 4px",
-                  fontSize: "10.5px",
+                  padding: "7px 4px",
+                  fontSize: "11px",
                   fontWeight: 700,
-                  color: "#fde68a",
-                  background: "rgba(245, 158, 11, 0.12)",
-                  borderRight: "1px solid rgba(255, 255, 255, 0.08)",
+                  color: "#FFFFFF",
+                  background: "#92400e",
+                  borderRight: "1px solid rgba(255, 255, 255, 0.15)",
                   borderBottom: "1px solid var(--border-strong)",
                 }}
               >
@@ -283,29 +288,29 @@ export default function MonthlyComparisonTable({
                 style={{
                   width: "75px",
                   textAlign: "center",
-                  padding: "6px 4px",
-                  fontSize: "10.5px",
+                  padding: "7px 4px",
+                  fontSize: "11px",
                   fontWeight: 800,
-                  color: "#fde68a",
-                  background: "rgba(245, 158, 11, 0.2)",
-                  borderRight: "1px solid rgba(255, 255, 255, 0.12)",
+                  color: "#FFFFFF",
+                  background: "#78350f",
+                  borderRight: "1px solid rgba(255, 255, 255, 0.2)",
                   borderBottom: "1px solid var(--border-strong)",
                 }}
               >
                 Score
               </th>
 
-              {/* BDG subheaders */}
+              {/* BDG Subheaders */}
               <th
                 style={{
                   width: "75px",
                   textAlign: "center",
-                  padding: "6px 4px",
-                  fontSize: "10.5px",
+                  padding: "7px 4px",
+                  fontSize: "11px",
                   fontWeight: 700,
-                  color: "#7dd3fc",
-                  background: "rgba(56, 189, 248, 0.12)",
-                  borderRight: "1px solid rgba(255, 255, 255, 0.08)",
+                  color: "#FFFFFF",
+                  background: "#0369a1",
+                  borderRight: "1px solid rgba(255, 255, 255, 0.15)",
                   borderBottom: "1px solid var(--border-strong)",
                 }}
               >
@@ -315,29 +320,29 @@ export default function MonthlyComparisonTable({
                 style={{
                   width: "85px",
                   textAlign: "center",
-                  padding: "6px 4px",
-                  fontSize: "10.5px",
+                  padding: "7px 4px",
+                  fontSize: "11px",
                   fontWeight: 800,
-                  color: "#7dd3fc",
-                  background: "rgba(56, 189, 248, 0.2)",
-                  borderRight: "1px solid rgba(255, 255, 255, 0.12)",
+                  color: "#FFFFFF",
+                  background: "#075985",
+                  borderRight: "1px solid rgba(255, 255, 255, 0.2)",
                   borderBottom: "1px solid var(--border-strong)",
                 }}
               >
                 BDG Score
               </th>
 
-              {/* SMG subheaders */}
+              {/* SMG Subheaders */}
               <th
                 style={{
                   width: "75px",
                   textAlign: "center",
-                  padding: "6px 4px",
-                  fontSize: "10.5px",
+                  padding: "7px 4px",
+                  fontSize: "11px",
                   fontWeight: 700,
-                  color: "#d8b4fe",
-                  background: "rgba(168, 85, 247, 0.12)",
-                  borderRight: "1px solid rgba(255, 255, 255, 0.08)",
+                  color: "#FFFFFF",
+                  background: "#6b21a8",
+                  borderRight: "1px solid rgba(255, 255, 255, 0.15)",
                   borderBottom: "1px solid var(--border-strong)",
                 }}
               >
@@ -347,11 +352,11 @@ export default function MonthlyComparisonTable({
                 style={{
                   width: "85px",
                   textAlign: "center",
-                  padding: "6px 4px",
-                  fontSize: "10.5px",
+                  padding: "7px 4px",
+                  fontSize: "11px",
                   fontWeight: 800,
-                  color: "#d8b4fe",
-                  background: "rgba(168, 85, 247, 0.2)",
+                  color: "#FFFFFF",
+                  background: "#581c87",
                   borderBottom: "1px solid var(--border-strong)",
                 }}
               >
@@ -367,9 +372,8 @@ export default function MonthlyComparisonTable({
                   <tr
                     key={`monthly-total-${idx}`}
                     style={{
-                      background: "linear-gradient(90deg, rgba(177, 18, 38, 0.25) 0%, rgba(30, 41, 59, 0.9) 100%)",
-                      fontWeight: 800,
-                      color: "var(--text-primary)",
+                      background: "#0f172a",
+                      color: "#FFFFFF",
                       borderTop: "2px solid var(--accent-primary)",
                       borderBottom: "2px solid var(--accent-primary)",
                     }}
@@ -383,7 +387,7 @@ export default function MonthlyComparisonTable({
                         fontWeight: 900,
                         letterSpacing: "0.05em",
                         color: "#FFFFFF",
-                        borderRight: "1px solid var(--border-subtle)",
+                        borderRight: "1px solid rgba(255, 255, 255, 0.15)",
                       }}
                     >
                       TOTAL ACHIEVEMENT
@@ -392,20 +396,22 @@ export default function MonthlyComparisonTable({
                       style={{
                         padding: "12px 6px",
                         textAlign: "center",
-                        fontWeight: 800,
+                        fontWeight: 900,
+                        fontSize: "12px",
                         color: "#FFFFFF",
-                        borderRight: "1px solid var(--border-subtle)",
+                        borderRight: "1px solid rgba(255, 255, 255, 0.15)",
                       }}
                     >
                       {row.bobot || "100%"}
                     </td>
+
                     {/* Nasional Total */}
                     <td
                       colSpan={2}
                       style={{
                         padding: "12px 6px",
                         textAlign: "center",
-                        borderRight: "1px solid var(--border-subtle)",
+                        borderRight: "1px solid rgba(255, 255, 255, 0.1)",
                       }}
                     />
                     <td
@@ -414,16 +420,16 @@ export default function MonthlyComparisonTable({
                         textAlign: "center",
                         fontWeight: 900,
                         fontSize: "13px",
-                        color: "#f59e0b",
-                        background: "rgba(245, 158, 11, 0.15)",
-                        borderRight: "1px solid var(--border-strong)",
+                        color: "#fbbf24",
+                        background: "rgba(245, 158, 11, 0.2)",
+                        borderRight: "1px solid rgba(255, 255, 255, 0.15)",
                       }}
                     >
                       {row.nasionalScore || "—"}
                     </td>
 
                     {/* BDG Total */}
-                    <td style={{ borderRight: "1px solid var(--border-subtle)" }} />
+                    <td style={{ borderRight: "1px solid rgba(255, 255, 255, 0.1)" }} />
                     <td
                       style={{
                         padding: "12px 6px",
@@ -431,23 +437,23 @@ export default function MonthlyComparisonTable({
                         fontWeight: 900,
                         fontSize: "13px",
                         color: "#38bdf8",
-                        background: "rgba(56, 189, 248, 0.15)",
-                        borderRight: "1px solid var(--border-strong)",
+                        background: "rgba(56, 189, 248, 0.2)",
+                        borderRight: "1px solid rgba(255, 255, 255, 0.15)",
                       }}
                     >
                       {row.bdgScore || "—"}
                     </td>
 
                     {/* SMG Total */}
-                    <td style={{ borderRight: "1px solid var(--border-subtle)" }} />
+                    <td style={{ borderRight: "1px solid rgba(255, 255, 255, 0.1)" }} />
                     <td
                       style={{
                         padding: "12px 6px",
                         textAlign: "center",
                         fontWeight: 900,
                         fontSize: "13px",
-                        color: "#c084fc",
-                        background: "rgba(168, 85, 247, 0.15)",
+                        color: "#d8b4fe",
+                        background: "rgba(168, 85, 247, 0.2)",
                       }}
                     >
                       {row.smgScore || "—"}
@@ -468,9 +474,9 @@ export default function MonthlyComparisonTable({
                   >
                     <td
                       style={{
-                        padding: "9px 6px",
+                        padding: "10px 6px",
                         textAlign: "center",
-                        fontWeight: 800,
+                        fontWeight: 900,
                         color: "var(--accent-primary)",
                         borderRight: "1px solid var(--border-subtle)",
                       }}
@@ -479,11 +485,11 @@ export default function MonthlyComparisonTable({
                     </td>
                     <td
                       style={{
-                        padding: "9px 14px",
-                        fontWeight: 800,
-                        fontSize: "12.5px",
+                        padding: "10px 14px",
+                        fontWeight: 900,
+                        fontSize: "13px",
                         color: "var(--text-primary)",
-                        letterSpacing: "0.01em",
+                        letterSpacing: "-0.01em",
                         borderRight: "1px solid var(--border-subtle)",
                       }}
                     >
@@ -491,22 +497,23 @@ export default function MonthlyComparisonTable({
                     </td>
                     <td
                       style={{
-                        padding: "9px 14px",
+                        padding: "10px 14px",
                         borderRight: "1px solid var(--border-subtle)",
                       }}
                     />
                     <td
                       style={{
-                        padding: "9px 6px",
+                        padding: "10px 6px",
                         textAlign: "center",
                         borderRight: "1px solid var(--border-subtle)",
                       }}
                     />
                     <td
                       style={{
-                        padding: "9px 6px",
+                        padding: "10px 6px",
                         textAlign: "center",
-                        fontWeight: 800,
+                        fontWeight: 900,
+                        fontSize: "12px",
                         color: "var(--text-primary)",
                         borderRight: "1px solid var(--border-subtle)",
                       }}
@@ -519,10 +526,11 @@ export default function MonthlyComparisonTable({
                     <td style={{ borderRight: "1px solid var(--border-subtle)" }} />
                     <td
                       style={{
-                        padding: "9px 6px",
+                        padding: "10px 6px",
                         textAlign: "center",
-                        fontWeight: 800,
-                        color: "var(--text-primary)",
+                        fontWeight: 900,
+                        fontSize: "12.5px",
+                        color: "#d97706",
                         background: "rgba(245, 158, 11, 0.08)",
                         borderRight: "1px solid var(--border-strong)",
                       }}
@@ -534,10 +542,11 @@ export default function MonthlyComparisonTable({
                     <td style={{ borderRight: "1px solid var(--border-subtle)" }} />
                     <td
                       style={{
-                        padding: "9px 6px",
+                        padding: "10px 6px",
                         textAlign: "center",
-                        fontWeight: 800,
-                        color: "var(--text-primary)",
+                        fontWeight: 900,
+                        fontSize: "12.5px",
+                        color: "#0284c7",
                         background: "rgba(56, 189, 248, 0.08)",
                         borderRight: "1px solid var(--border-strong)",
                       }}
@@ -549,10 +558,11 @@ export default function MonthlyComparisonTable({
                     <td style={{ borderRight: "1px solid var(--border-subtle)" }} />
                     <td
                       style={{
-                        padding: "9px 6px",
+                        padding: "10px 6px",
                         textAlign: "center",
-                        fontWeight: 800,
-                        color: "var(--text-primary)",
+                        fontWeight: 900,
+                        fontSize: "12.5px",
+                        color: "#7e22ce",
                         background: "rgba(168, 85, 247, 0.08)",
                       }}
                     >
@@ -562,7 +572,7 @@ export default function MonthlyComparisonTable({
                 );
               }
 
-              // Normal & Sub parameter rows
+              // Normal & Sub Parameter Rows
               const isEven = idx % 2 === 0;
               const isExpanded = expandedDefIndex === idx;
 
@@ -570,7 +580,7 @@ export default function MonthlyComparisonTable({
                 <tr
                   key={`monthly-row-${idx}`}
                   style={{
-                    background: isEven ? "transparent" : "var(--table-row-alt)",
+                    background: isEven ? "transparent" : "var(--bg-table-row-hover)",
                     borderBottom: "1px solid var(--border-subtle)",
                     transition: "background-color 0.15s ease",
                   }}
@@ -578,9 +588,10 @@ export default function MonthlyComparisonTable({
                 >
                   <td
                     style={{
-                      padding: "8px 6px",
+                      padding: "9px 6px",
                       textAlign: "center",
                       color: "var(--text-muted)",
+                      fontWeight: 600,
                       fontSize: "11px",
                       borderRight: "1px solid var(--border-subtle)",
                     }}
@@ -589,9 +600,9 @@ export default function MonthlyComparisonTable({
                   </td>
                   <td
                     style={{
-                      padding: "8px 14px",
+                      padding: "9px 14px",
                       paddingLeft: row.isSubRow ? "28px" : "14px",
-                      fontWeight: row.isSubRow ? 500 : 600,
+                      fontWeight: row.isSubRow ? 500 : 700,
                       color: row.isSubRow ? "var(--text-secondary)" : "var(--text-primary)",
                       fontSize: "11.5px",
                       borderRight: "1px solid var(--border-subtle)",
@@ -605,7 +616,7 @@ export default function MonthlyComparisonTable({
                           height: "6px",
                           borderRadius: "50%",
                           background: "var(--accent-primary)",
-                          opacity: 0.6,
+                          opacity: 0.7,
                           marginRight: "8px",
                           verticalAlign: "middle",
                         }}
@@ -616,10 +627,10 @@ export default function MonthlyComparisonTable({
                   <td
                     onClick={() => row.definisi && toggleDef(idx)}
                     style={{
-                      padding: "8px 14px",
-                      fontSize: "10.5px",
-                      lineHeight: "1.35",
-                      color: "var(--text-muted)",
+                      padding: "9px 14px",
+                      fontSize: "11px",
+                      lineHeight: "1.4",
+                      color: "var(--text-secondary)",
                       borderRight: "1px solid var(--border-subtle)",
                       cursor: row.definisi ? "pointer" : "default",
                       wordBreak: "break-word",
@@ -643,9 +654,10 @@ export default function MonthlyComparisonTable({
                             style={{
                               fontSize: "9.5px",
                               color: "var(--accent-primary)",
-                              fontWeight: 600,
-                              marginTop: "2px",
+                              fontWeight: 700,
+                              marginTop: "3px",
                               display: "inline-block",
+                              cursor: "pointer",
                             }}
                           >
                             {isExpanded ? "Tutup" : "Selengkapnya"}
@@ -658,10 +670,10 @@ export default function MonthlyComparisonTable({
                   </td>
                   <td
                     style={{
-                      padding: "8px 6px",
+                      padding: "9px 6px",
                       textAlign: "center",
                       fontWeight: 700,
-                      fontSize: "11px",
+                      fontSize: "11.5px",
                       color: "var(--text-primary)",
                       borderRight: "1px solid var(--border-subtle)",
                     }}
@@ -670,9 +682,9 @@ export default function MonthlyComparisonTable({
                   </td>
                   <td
                     style={{
-                      padding: "8px 6px",
+                      padding: "9px 6px",
                       textAlign: "center",
-                      fontSize: "11px",
+                      fontSize: "11.5px",
                       color: "var(--text-secondary)",
                       borderRight: "1px solid var(--border-subtle)",
                     }}
@@ -683,9 +695,9 @@ export default function MonthlyComparisonTable({
                   {/* Nasional Values */}
                   <td
                     style={{
-                      padding: "8px 6px",
+                      padding: "9px 6px",
                       textAlign: "center",
-                      fontSize: "11px",
+                      fontSize: "11.5px",
                       color: "var(--text-primary)",
                       borderRight: "1px solid var(--border-subtle)",
                     }}
@@ -694,9 +706,9 @@ export default function MonthlyComparisonTable({
                   </td>
                   <td
                     style={{
-                      padding: "8px 6px",
+                      padding: "9px 6px",
                       textAlign: "center",
-                      fontSize: "11px",
+                      fontSize: "11.5px",
                       color: "var(--text-secondary)",
                       borderRight: "1px solid var(--border-subtle)",
                     }}
@@ -705,12 +717,12 @@ export default function MonthlyComparisonTable({
                   </td>
                   <td
                     style={{
-                      padding: "8px 6px",
+                      padding: "9px 6px",
                       textAlign: "center",
                       fontWeight: 700,
-                      fontSize: "11px",
+                      fontSize: "11.5px",
                       color: "var(--text-primary)",
-                      background: "rgba(245, 158, 11, 0.05)",
+                      background: "rgba(245, 158, 11, 0.06)",
                       borderRight: "1px solid var(--border-strong)",
                     }}
                   >
@@ -720,9 +732,9 @@ export default function MonthlyComparisonTable({
                   {/* BDG Values */}
                   <td
                     style={{
-                      padding: "8px 6px",
+                      padding: "9px 6px",
                       textAlign: "center",
-                      fontSize: "11px",
+                      fontSize: "11.5px",
                       color: "var(--text-primary)",
                       borderRight: "1px solid var(--border-subtle)",
                     }}
@@ -731,12 +743,12 @@ export default function MonthlyComparisonTable({
                   </td>
                   <td
                     style={{
-                      padding: "8px 6px",
+                      padding: "9px 6px",
                       textAlign: "center",
                       fontWeight: 700,
-                      fontSize: "11px",
+                      fontSize: "11.5px",
                       color: "var(--text-primary)",
-                      background: "rgba(56, 189, 248, 0.05)",
+                      background: "rgba(56, 189, 248, 0.06)",
                       borderRight: "1px solid var(--border-strong)",
                     }}
                   >
@@ -746,9 +758,9 @@ export default function MonthlyComparisonTable({
                   {/* SMG Values */}
                   <td
                     style={{
-                      padding: "8px 6px",
+                      padding: "9px 6px",
                       textAlign: "center",
-                      fontSize: "11px",
+                      fontSize: "11.5px",
                       color: "var(--text-primary)",
                       borderRight: "1px solid var(--border-subtle)",
                     }}
@@ -757,12 +769,12 @@ export default function MonthlyComparisonTable({
                   </td>
                   <td
                     style={{
-                      padding: "8px 6px",
+                      padding: "9px 6px",
                       textAlign: "center",
                       fontWeight: 700,
-                      fontSize: "11px",
+                      fontSize: "11.5px",
                       color: "var(--text-primary)",
-                      background: "rgba(168, 85, 247, 0.05)",
+                      background: "rgba(168, 85, 247, 0.06)",
                     }}
                   >
                     {row.smgScore || "—"}
