@@ -160,8 +160,18 @@ function classifySection(parameterName: string): string {
 function comparableName(value: string): string {
   return normalize(value)
     .replace("salesinteractionratio", "salesratio")
+    .replace("sir", "salesratio")
+    .replace("repeatcontactrate", "repeat")
+    .replace("rcr", "repeat")
     .replace("retentionrate", "retention")
-    .replace("capsnumber", "caps");
+    .replace("capsnumber", "caps")
+    .replace("responsetime", "respondtime")
+    .replace("ticketslafixed", "inslafixed")
+    .replace("qualityofticket", "")
+    .replace("people", "")
+    .replace("livechat", "socmed")
+    .replace("socialmedia", "socmed")
+    .replace("chatdm", "socmed");
 }
 
 function parseDailyValues(rows: string[][], definition: TabDefinition, period: string): Map<string, Record<number, string>> {
@@ -581,14 +591,68 @@ export async function getKpiData(period = DEFAULT_PERIOD): Promise<KpiDashboardD
     const tabs = TAB_DEFINITIONS.map((definition) => {
       const highlights = freetextHighlightsMap[definition.tabKey];
       const fallback = mockDashboardData.tabs[definition.fallbackIndex];
-      const tabData = parseRekapTab(rekapRows, dailyRows, definition, period, highlights) ?? fallback;
       const mResult = monthlyResultMap[definition.tabKey];
       const monthlyComparison = mResult.rows.length > 0
         ? mResult.rows
         : (fallback.monthlyComparison ?? []);
+      const tabData = parseRekapTab(rekapRows, dailyRows, definition, period, highlights) ?? fallback;
+      let totalAchievement = tabData.totalAchievement;
+      if (!totalAchievement && mResult.regionalComparison?.nasionalScore) {
+        const parsedMonthlyScore = parsePercentage(mResult.regionalComparison.nasionalScore, 0);
+        if (parsedMonthlyScore > 0) {
+          totalAchievement = parsedMonthlyScore;
+        }
+      }
+
+      // If sections have 0 weights from Rekap, check if monthly comparison rows have section category scores and parameter scores!
+      const sections = tabData.sections.map((sec) => {
+        let weight = sec.weight;
+        const normSec = normalize(sec.name);
+        const catRow = monthlyComparison.find(
+          (r) =>
+            r.isCategoryRow &&
+            (normalize(r.parameter).includes(normSec.replace("customerexperience", "cx")) ||
+              normalize(r.parameter) === normSec)
+        );
+        if (weight === 0 && catRow?.nasionalScore) {
+          weight = parsePercentage(catRow.nasionalScore, weight);
+        }
+
+        const parameters = sec.parameters.map((p) => {
+          if (p.mtdAchievement === "—" || !p.mtdAchievement || p.mtdAchievement === "0%") {
+            const pNorm = comparableName(p.name);
+            const mRow = monthlyComparison.find(
+              (r) =>
+                !r.isCategoryRow &&
+                !r.isTotalRow &&
+                (comparableName(r.parameter) === pNorm ||
+                  comparableName(r.parameter).includes(pNorm) ||
+                  pNorm.includes(comparableName(r.parameter)))
+            );
+            if (mRow) {
+              return {
+                ...p,
+                target: p.target || mRow.target || "—",
+                bobotTarget: p.bobotTarget || mRow.bobot || undefined,
+                mtdAchievement: mRow.nasionalAchTarget || mRow.nasionalAch || p.mtdAchievement,
+                robotAchievement: mRow.nasionalScore || p.robotAchievement,
+              };
+            }
+          }
+          return p;
+        });
+
+        return {
+          ...sec,
+          weight,
+          parameters,
+        };
+      });
 
       return {
         ...tabData,
+        totalAchievement,
+        sections,
         monthlyComparison,
         hasComparison: mResult.hasComparison,
         regionalComparison: mResult.regionalComparison,
