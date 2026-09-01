@@ -349,8 +349,18 @@ function parseRekapTab(
 
 const MONTH_NAMES_SHORT = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
 
-function parseMonthlyComparison(rows: string[][], period: string): MonthlyKpiRow[] {
-  if (!rows || rows.length < 2) return [];
+type MonthlyParseResult = {
+  rows: MonthlyKpiRow[];
+  hasComparison: boolean;
+  regionalComparison?: {
+    bdgScore: string;
+    smgScore: string;
+    nasionalScore: string;
+  };
+};
+
+function parseMonthlyComparison(rows: string[][], period: string): MonthlyParseResult {
+  if (!rows || rows.length < 2) return { rows: [], hasComparison: false };
 
   const row0 = rows[0] || [];
   const row1 = rows[1] || [];
@@ -395,6 +405,7 @@ function parseMonthlyComparison(rows: string[][], period: string): MonthlyKpiRow
     if (h0 === "bobot" || h1 === "bobot") bobotCol = c;
   }
 
+  let regionalComparison: { bdgScore: string; smgScore: string; nasionalScore: string } | undefined = undefined;
   const result: MonthlyKpiRow[] = [];
 
   const startRow =
@@ -432,15 +443,22 @@ function parseMonthlyComparison(rows: string[][], period: string): MonthlyKpiRow
       }
     }
 
+    const normNo = normalize(no);
     const normParam = normalize(param);
     const normDef = normalize(def);
 
     // Is it a Total row?
     const isTotalRow =
+      normNo === "total" ||
       normParam === "total" ||
       (no === "" && param === "" && def === "" && (bobot === "100%" || bobot === "100"));
 
     if (isTotalRow) {
+      regionalComparison = {
+        nasionalScore,
+        bdgScore: hasBdgSmg ? bdgScore : "—",
+        smgScore: hasBdgSmg ? smgScore : "—",
+      };
       result.push({
         no: "",
         parameter: "Total",
@@ -451,9 +469,9 @@ function parseMonthlyComparison(rows: string[][], period: string): MonthlyKpiRow
         nasionalAchTarget: periodColIndex !== -1 ? nasionalAchTarget : "",
         nasionalScore,
         bdgAch: hasBdgSmg ? bdgAch : "",
-        bdgScore,
+        bdgScore: hasBdgSmg ? bdgScore : "",
         smgAch: hasBdgSmg ? smgAch : "",
-        smgScore,
+        smgScore: hasBdgSmg ? smgScore : "",
         isTotalRow: true,
       });
       continue;
@@ -477,9 +495,9 @@ function parseMonthlyComparison(rows: string[][], period: string): MonthlyKpiRow
         nasionalAchTarget: "",
         nasionalScore,
         bdgAch: "",
-        bdgScore,
+        bdgScore: hasBdgSmg ? bdgScore : "",
         smgAch: "",
-        smgScore,
+        smgScore: hasBdgSmg ? smgScore : "",
         isCategoryRow: true,
       });
       continue;
@@ -512,16 +530,16 @@ function parseMonthlyComparison(rows: string[][], period: string): MonthlyKpiRow
         nasionalAch,
         nasionalAchTarget,
         nasionalScore,
-        bdgAch,
-        bdgScore,
-        smgAch,
-        smgScore,
+        bdgAch: hasBdgSmg ? bdgAch : "",
+        bdgScore: hasBdgSmg ? bdgScore : "",
+        smgAch: hasBdgSmg ? smgAch : "",
+        smgScore: hasBdgSmg ? smgScore : "",
         isSubRow,
       });
     }
   }
 
-  return result;
+  return { rows: result, hasComparison: hasBdgSmg, regionalComparison };
 }
 
 function periodLabel(period: string): string {
@@ -550,7 +568,7 @@ export async function getKpiData(period = DEFAULT_PERIOD): Promise<KpiDashboardD
     ]);
 
     const freetextHighlightsMap = parseFreetext(freetextRows);
-    const monthlyComparisonMap: Record<string, MonthlyKpiRow[]> = {
+    const monthlyResultMap: Record<string, MonthlyParseResult> = {
       callCenter: parseMonthlyComparison(ccMonthlyRows, period),
       eCare: parseMonthlyComparison(ecMonthlyRows, period),
     };
@@ -559,13 +577,16 @@ export async function getKpiData(period = DEFAULT_PERIOD): Promise<KpiDashboardD
       const highlights = freetextHighlightsMap[definition.tabKey];
       const fallback = mockDashboardData.tabs[definition.fallbackIndex];
       const tabData = parseRekapTab(rekapRows, dailyRows, definition, period, highlights) ?? fallback;
-      const monthlyComparison = monthlyComparisonMap[definition.tabKey]?.length > 0
-        ? monthlyComparisonMap[definition.tabKey]
+      const mResult = monthlyResultMap[definition.tabKey];
+      const monthlyComparison = mResult.rows.length > 0
+        ? mResult.rows
         : (fallback.monthlyComparison ?? []);
 
       return {
         ...tabData,
         monthlyComparison,
+        hasComparison: mResult.hasComparison,
+        regionalComparison: mResult.regionalComparison,
       };
     });
 

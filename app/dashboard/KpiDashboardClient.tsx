@@ -7,6 +7,7 @@ import type { KpiDashboardData } from "@/lib/types";
 import AchievementGauge from "@/components/AchievementGauge";
 import KpiSectionTable from "@/components/KpiSectionTable";
 import MonthlyComparisonTable from "@/components/MonthlyComparisonTable";
+import RegionalComparisonWidget from "@/components/RegionalComparisonWidget";
 import SummaryHighlight from "@/components/SummaryHighlight";
 import TabSelector from "@/components/TabSelector";
 import TopNav from "@/components/TopNav";
@@ -125,6 +126,13 @@ export default function KpiDashboardClient({ dashboardData }: KpiDashboardClient
             />
           </div>
 
+          {/* Regional Comparison Widget (BDG vs SMG vs Nasional) */}
+          <RegionalComparisonWidget
+            hasComparison={currentTabData.hasComparison}
+            regionalComparison={currentTabData.regionalComparison}
+            periodLabel={activeData.selectedPeriod}
+          />
+
           {/* Divider */}
           <div style={{ height: "1px", background: "rgba(255, 255, 255, 0.08)" }} />
 
@@ -171,7 +179,9 @@ export default function KpiDashboardClient({ dashboardData }: KpiDashboardClient
                 <option value="2026-06">June 2026</option>
                 <option value="2026-05">May 2026</option>
                 <option value="2026-04">April 2026</option>
+                <option value="2026-03">March 2026</option>
                 <option value="2026-02">February 2026</option>
+                <option value="2026-01">January 2026</option>
               </select>
             </div>
 
@@ -219,11 +229,12 @@ export default function KpiDashboardClient({ dashboardData }: KpiDashboardClient
             </div>
           </div>
 
-          {/* Monthly Comparison Table (Juli: BDG vs SMG vs Nasional) */}
+          {/* Monthly Comparison Table */}
           {currentTabData.monthlyComparison && currentTabData.monthlyComparison.length > 0 && (
             <MonthlyComparisonTable
               rows={currentTabData.monthlyComparison}
               period={activeData.selectedPeriod}
+              hasComparison={currentTabData.hasComparison}
             />
           )}
 

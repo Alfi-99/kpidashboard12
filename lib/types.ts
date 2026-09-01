@@ -62,6 +62,12 @@ export interface TabData {
   sections: KpiSection[];
   summaryHighlight: string[];
   monthlyComparison?: MonthlyKpiRow[];
+  hasComparison?: boolean;
+  regionalComparison?: {
+    bdgScore: string;
+    smgScore: string;
+    nasionalScore: string;
+  };
 }
 
 export interface KpiDashboardData {

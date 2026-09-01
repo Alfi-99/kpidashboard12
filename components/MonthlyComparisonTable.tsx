@@ -7,15 +7,27 @@ import type { MonthlyKpiRow } from "@/lib/types";
 interface MonthlyComparisonTableProps {
   rows?: MonthlyKpiRow[];
   period?: string;
+  hasComparison?: boolean;
 }
 
 export default function MonthlyComparisonTable({
   rows,
   period = "July 2026",
+  hasComparison,
 }: MonthlyComparisonTableProps) {
   if (!rows || rows.length === 0) {
     return null;
   }
+
+  // If hasComparison prop is not explicitly passed, infer from row data
+  const isComparisonActive =
+    hasComparison !== undefined
+      ? hasComparison
+      : rows.some(
+          (r) =>
+            (r.bdgScore && r.bdgScore !== "0.00%" && r.bdgScore !== "0%" && r.bdgScore !== "—") ||
+            (r.bdgAch && r.bdgAch !== "0%" && r.bdgAch !== "—")
+        );
 
   return (
     <div
@@ -56,7 +68,9 @@ export default function MonthlyComparisonTable({
               letterSpacing: "-0.01em",
             }}
           >
-            Monthly Comparison & Performance
+            {isComparisonActive
+              ? "Monthly Comparison & Performance"
+              : "Monthly Performance (Nasional)"}
           </h3>
           <span
             style={{
@@ -85,10 +99,21 @@ export default function MonthlyComparisonTable({
               border: "1px solid var(--border-strong)",
             }}
           >
-            Komparasi:{" "}
-            <strong style={{ color: "#0284c7" }}>Bandung (BDG)</strong> vs{" "}
-            <strong style={{ color: "#7e22ce" }}>Semarang (SMG)</strong> vs{" "}
-            <strong style={{ color: "#d97706" }}>Nasional</strong>
+            {isComparisonActive ? (
+              <>
+                Komparasi:{" "}
+                <strong style={{ color: "#0284c7" }}>Bandung (BDG)</strong> vs{" "}
+                <strong style={{ color: "#7e22ce" }}>Semarang (SMG)</strong> vs{" "}
+                <strong style={{ color: "#d97706" }}>Nasional</strong>
+              </>
+            ) : (
+              <>
+                Level: <strong style={{ color: "#d97706" }}>Nasional</strong>{" "}
+                <span style={{ color: "var(--text-muted)", fontWeight: 500 }}>
+                  (Breakdown BDG &amp; SMG belum ada)
+                </span>
+              </>
+            )}
           </span>
         </div>
       </div>
@@ -134,7 +159,7 @@ export default function MonthlyComparisonTable({
               <th
                 rowSpan={2}
                 style={{
-                  minWidth: "240px",
+                  minWidth: isComparisonActive ? "240px" : "280px",
                   textAlign: "left",
                   padding: "11px 16px",
                   fontWeight: 800,
@@ -188,44 +213,49 @@ export default function MonthlyComparisonTable({
                   fontSize: "11.5px",
                   color: "#FFFFFF",
                   background: "linear-gradient(135deg, #d97706 0%, #b45309 100%)",
-                  borderRight: "1px solid rgba(255, 255, 255, 0.2)",
+                  borderRight: isComparisonActive ? "1px solid rgba(255, 255, 255, 0.2)" : "none",
                   borderBottom: "1px solid rgba(255, 255, 255, 0.2)",
                   letterSpacing: "0.04em",
                 }}
               >
                 NASIONAL
               </th>
-              <th
-                colSpan={2}
-                style={{
-                  textAlign: "center",
-                  padding: "9px 6px",
-                  fontWeight: 900,
-                  fontSize: "11.5px",
-                  color: "#FFFFFF",
-                  background: "linear-gradient(135deg, #0284c7 0%, #0369a1 100%)",
-                  borderRight: "1px solid rgba(255, 255, 255, 0.2)",
-                  borderBottom: "1px solid rgba(255, 255, 255, 0.2)",
-                  letterSpacing: "0.04em",
-                }}
-              >
-                BANDUNG (BDG)
-              </th>
-              <th
-                colSpan={2}
-                style={{
-                  textAlign: "center",
-                  padding: "9px 6px",
-                  fontWeight: 900,
-                  fontSize: "11.5px",
-                  color: "#FFFFFF",
-                  background: "linear-gradient(135deg, #7e22ce 0%, #6b21a8 100%)",
-                  borderBottom: "1px solid rgba(255, 255, 255, 0.2)",
-                  letterSpacing: "0.04em",
-                }}
-              >
-                SEMARANG (SMG)
-              </th>
+
+              {isComparisonActive && (
+                <>
+                  <th
+                    colSpan={2}
+                    style={{
+                      textAlign: "center",
+                      padding: "9px 6px",
+                      fontWeight: 900,
+                      fontSize: "11.5px",
+                      color: "#FFFFFF",
+                      background: "linear-gradient(135deg, #0284c7 0%, #0369a1 100%)",
+                      borderRight: "1px solid rgba(255, 255, 255, 0.2)",
+                      borderBottom: "1px solid rgba(255, 255, 255, 0.2)",
+                      letterSpacing: "0.04em",
+                    }}
+                  >
+                    BANDUNG (BDG)
+                  </th>
+                  <th
+                    colSpan={2}
+                    style={{
+                      textAlign: "center",
+                      padding: "9px 6px",
+                      fontWeight: 900,
+                      fontSize: "11.5px",
+                      color: "#FFFFFF",
+                      background: "linear-gradient(135deg, #7e22ce 0%, #6b21a8 100%)",
+                      borderBottom: "1px solid rgba(255, 255, 255, 0.2)",
+                      letterSpacing: "0.04em",
+                    }}
+                  >
+                    SEMARANG (SMG)
+                  </th>
+                </>
+              )}
             </tr>
 
             {/* Sub Header Row */}
@@ -233,7 +263,7 @@ export default function MonthlyComparisonTable({
               {/* Nasional Subheaders */}
               <th
                 style={{
-                  width: "80px",
+                  width: isComparisonActive ? "80px" : "110px",
                   textAlign: "center",
                   padding: "7px 4px",
                   fontSize: "11px",
@@ -248,7 +278,7 @@ export default function MonthlyComparisonTable({
               </th>
               <th
                 style={{
-                  width: "90px",
+                  width: isComparisonActive ? "90px" : "120px",
                   textAlign: "center",
                   padding: "7px 4px",
                   fontSize: "11px",
@@ -263,14 +293,14 @@ export default function MonthlyComparisonTable({
               </th>
               <th
                 style={{
-                  width: "80px",
+                  width: isComparisonActive ? "80px" : "110px",
                   textAlign: "center",
                   padding: "7px 4px",
                   fontSize: "11px",
                   fontWeight: 800,
                   color: "#FFFFFF",
                   background: "#78350f",
-                  borderRight: "1px solid rgba(255, 255, 255, 0.2)",
+                  borderRight: isComparisonActive ? "1px solid rgba(255, 255, 255, 0.2)" : "none",
                   borderBottom: "1px solid var(--border-strong)",
                 }}
               >
@@ -278,67 +308,71 @@ export default function MonthlyComparisonTable({
               </th>
 
               {/* BDG Subheaders */}
-              <th
-                style={{
-                  width: "80px",
-                  textAlign: "center",
-                  padding: "7px 4px",
-                  fontSize: "11px",
-                  fontWeight: 700,
-                  color: "#FFFFFF",
-                  background: "#0369a1",
-                  borderRight: "1px solid rgba(255, 255, 255, 0.15)",
-                  borderBottom: "1px solid var(--border-strong)",
-                }}
-              >
-                BDG
-              </th>
-              <th
-                style={{
-                  width: "90px",
-                  textAlign: "center",
-                  padding: "7px 4px",
-                  fontSize: "11px",
-                  fontWeight: 800,
-                  color: "#FFFFFF",
-                  background: "#075985",
-                  borderRight: "1px solid rgba(255, 255, 255, 0.2)",
-                  borderBottom: "1px solid var(--border-strong)",
-                }}
-              >
-                BDG Score
-              </th>
+              {isComparisonActive && (
+                <>
+                  <th
+                    style={{
+                      width: "80px",
+                      textAlign: "center",
+                      padding: "7px 4px",
+                      fontSize: "11px",
+                      fontWeight: 700,
+                      color: "#FFFFFF",
+                      background: "#0369a1",
+                      borderRight: "1px solid rgba(255, 255, 255, 0.15)",
+                      borderBottom: "1px solid var(--border-strong)",
+                    }}
+                  >
+                    BDG
+                  </th>
+                  <th
+                    style={{
+                      width: "90px",
+                      textAlign: "center",
+                      padding: "7px 4px",
+                      fontSize: "11px",
+                      fontWeight: 800,
+                      color: "#FFFFFF",
+                      background: "#075985",
+                      borderRight: "1px solid rgba(255, 255, 255, 0.2)",
+                      borderBottom: "1px solid var(--border-strong)",
+                    }}
+                  >
+                    BDG Score
+                  </th>
 
-              {/* SMG Subheaders */}
-              <th
-                style={{
-                  width: "80px",
-                  textAlign: "center",
-                  padding: "7px 4px",
-                  fontSize: "11px",
-                  fontWeight: 700,
-                  color: "#FFFFFF",
-                  background: "#6b21a8",
-                  borderRight: "1px solid rgba(255, 255, 255, 0.15)",
-                  borderBottom: "1px solid var(--border-strong)",
-                }}
-              >
-                SMG
-              </th>
-              <th
-                style={{
-                  width: "90px",
-                  textAlign: "center",
-                  padding: "7px 4px",
-                  fontSize: "11px",
-                  fontWeight: 800,
-                  color: "#FFFFFF",
-                  background: "#581c87",
-                  borderBottom: "1px solid var(--border-strong)",
-                }}
-              >
-                SMG Score
-              </th>
+                  {/* SMG Subheaders */}
+                  <th
+                    style={{
+                      width: "80px",
+                      textAlign: "center",
+                      padding: "7px 4px",
+                      fontSize: "11px",
+                      fontWeight: 700,
+                      color: "#FFFFFF",
+                      background: "#6b21a8",
+                      borderRight: "1px solid rgba(255, 255, 255, 0.15)",
+                      borderBottom: "1px solid var(--border-strong)",
+                    }}
+                  >
+                    SMG
+                  </th>
+                  <th
+                    style={{
+                      width: "90px",
+                      textAlign: "center",
+                      padding: "7px 4px",
+                      fontSize: "11px",
+                      fontWeight: 800,
+                      color: "#FFFFFF",
+                      background: "#581c87",
+                      borderBottom: "1px solid var(--border-strong)",
+                    }}
+                  >
+                    SMG Score
+                  </th>
+                </>
+              )}
             </tr>
           </thead>
 
@@ -399,42 +433,48 @@ export default function MonthlyComparisonTable({
                         fontSize: "13px",
                         color: "#fbbf24",
                         background: "rgba(245, 158, 11, 0.2)",
-                        borderRight: "1px solid rgba(255, 255, 255, 0.15)",
+                        borderRight: isComparisonActive
+                          ? "1px solid rgba(255, 255, 255, 0.15)"
+                          : "none",
                       }}
                     >
                       {row.nasionalScore || "—"}
                     </td>
 
                     {/* BDG Total */}
-                    <td style={{ borderRight: "1px solid rgba(255, 255, 255, 0.1)" }} />
-                    <td
-                      style={{
-                        padding: "12px 6px",
-                        textAlign: "center",
-                        fontWeight: 900,
-                        fontSize: "13px",
-                        color: "#38bdf8",
-                        background: "rgba(56, 189, 248, 0.2)",
-                        borderRight: "1px solid rgba(255, 255, 255, 0.15)",
-                      }}
-                    >
-                      {row.bdgScore || "—"}
-                    </td>
+                    {isComparisonActive && (
+                      <>
+                        <td style={{ borderRight: "1px solid rgba(255, 255, 255, 0.1)" }} />
+                        <td
+                          style={{
+                            padding: "12px 6px",
+                            textAlign: "center",
+                            fontWeight: 900,
+                            fontSize: "13px",
+                            color: "#38bdf8",
+                            background: "rgba(56, 189, 248, 0.2)",
+                            borderRight: "1px solid rgba(255, 255, 255, 0.15)",
+                          }}
+                        >
+                          {row.bdgScore || "—"}
+                        </td>
 
-                    {/* SMG Total */}
-                    <td style={{ borderRight: "1px solid rgba(255, 255, 255, 0.1)" }} />
-                    <td
-                      style={{
-                        padding: "12px 6px",
-                        textAlign: "center",
-                        fontWeight: 900,
-                        fontSize: "13px",
-                        color: "#d8b4fe",
-                        background: "rgba(168, 85, 247, 0.2)",
-                      }}
-                    >
-                      {row.smgScore || "—"}
-                    </td>
+                        {/* SMG Total */}
+                        <td style={{ borderRight: "1px solid rgba(255, 255, 255, 0.1)" }} />
+                        <td
+                          style={{
+                            padding: "12px 6px",
+                            textAlign: "center",
+                            fontWeight: 900,
+                            fontSize: "13px",
+                            color: "#d8b4fe",
+                            background: "rgba(168, 85, 247, 0.2)",
+                          }}
+                        >
+                          {row.smgScore || "—"}
+                        </td>
+                      </>
+                    )}
                   </tr>
                 );
               }
@@ -503,42 +543,48 @@ export default function MonthlyComparisonTable({
                         fontSize: "12.5px",
                         color: "#d97706",
                         background: "rgba(245, 158, 11, 0.08)",
-                        borderRight: "1px solid var(--border-strong)",
+                        borderRight: isComparisonActive
+                          ? "1px solid var(--border-strong)"
+                          : "none",
                       }}
                     >
                       {row.nasionalScore}
                     </td>
 
                     {/* BDG Category Score */}
-                    <td style={{ borderRight: "1px solid var(--border-subtle)" }} />
-                    <td
-                      style={{
-                        padding: "10px 6px",
-                        textAlign: "center",
-                        fontWeight: 900,
-                        fontSize: "12.5px",
-                        color: "#0284c7",
-                        background: "rgba(56, 189, 248, 0.08)",
-                        borderRight: "1px solid var(--border-strong)",
-                      }}
-                    >
-                      {row.bdgScore}
-                    </td>
+                    {isComparisonActive && (
+                      <>
+                        <td style={{ borderRight: "1px solid var(--border-subtle)" }} />
+                        <td
+                          style={{
+                            padding: "10px 6px",
+                            textAlign: "center",
+                            fontWeight: 900,
+                            fontSize: "12.5px",
+                            color: "#0284c7",
+                            background: "rgba(56, 189, 248, 0.08)",
+                            borderRight: "1px solid var(--border-strong)",
+                          }}
+                        >
+                          {row.bdgScore}
+                        </td>
 
-                    {/* SMG Category Score */}
-                    <td style={{ borderRight: "1px solid var(--border-subtle)" }} />
-                    <td
-                      style={{
-                        padding: "10px 6px",
-                        textAlign: "center",
-                        fontWeight: 900,
-                        fontSize: "12.5px",
-                        color: "#7e22ce",
-                        background: "rgba(168, 85, 247, 0.08)",
-                      }}
-                    >
-                      {row.smgScore}
-                    </td>
+                        {/* SMG Category Score */}
+                        <td style={{ borderRight: "1px solid var(--border-subtle)" }} />
+                        <td
+                          style={{
+                            padding: "10px 6px",
+                            textAlign: "center",
+                            fontWeight: 900,
+                            fontSize: "12.5px",
+                            color: "#7e22ce",
+                            background: "rgba(168, 85, 247, 0.08)",
+                          }}
+                        >
+                          {row.smgScore}
+                        </td>
+                      </>
+                    )}
                   </tr>
                 );
               }
@@ -650,62 +696,67 @@ export default function MonthlyComparisonTable({
                       fontSize: "11.5px",
                       color: "var(--text-primary)",
                       background: "rgba(245, 158, 11, 0.06)",
-                      borderRight: "1px solid var(--border-strong)",
+                      borderRight: isComparisonActive
+                        ? "1px solid var(--border-strong)"
+                        : "none",
                     }}
                   >
                     {row.nasionalScore || "—"}
                   </td>
 
-                  {/* BDG Values */}
-                  <td
-                    style={{
-                      padding: "9px 6px",
-                      textAlign: "center",
-                      fontSize: "11.5px",
-                      color: "var(--text-primary)",
-                      borderRight: "1px solid var(--border-subtle)",
-                    }}
-                  >
-                    {row.bdgAch || "—"}
-                  </td>
-                  <td
-                    style={{
-                      padding: "9px 6px",
-                      textAlign: "center",
-                      fontWeight: 700,
-                      fontSize: "11.5px",
-                      color: "var(--text-primary)",
-                      background: "rgba(56, 189, 248, 0.06)",
-                      borderRight: "1px solid var(--border-strong)",
-                    }}
-                  >
-                    {row.bdgScore || "—"}
-                  </td>
+                  {/* BDG & SMG Values (Only if comparison active) */}
+                  {isComparisonActive && (
+                    <>
+                      <td
+                        style={{
+                          padding: "9px 6px",
+                          textAlign: "center",
+                          fontSize: "11.5px",
+                          color: "var(--text-primary)",
+                          borderRight: "1px solid var(--border-subtle)",
+                        }}
+                      >
+                        {row.bdgAch || "—"}
+                      </td>
+                      <td
+                        style={{
+                          padding: "9px 6px",
+                          textAlign: "center",
+                          fontWeight: 700,
+                          fontSize: "11.5px",
+                          color: "var(--text-primary)",
+                          background: "rgba(56, 189, 248, 0.06)",
+                          borderRight: "1px solid var(--border-strong)",
+                        }}
+                      >
+                        {row.bdgScore || "—"}
+                      </td>
 
-                  {/* SMG Values */}
-                  <td
-                    style={{
-                      padding: "9px 6px",
-                      textAlign: "center",
-                      fontSize: "11.5px",
-                      color: "var(--text-primary)",
-                      borderRight: "1px solid var(--border-subtle)",
-                    }}
-                  >
-                    {row.smgAch || "—"}
-                  </td>
-                  <td
-                    style={{
-                      padding: "9px 6px",
-                      textAlign: "center",
-                      fontWeight: 700,
-                      fontSize: "11.5px",
-                      color: "var(--text-primary)",
-                      background: "rgba(168, 85, 247, 0.06)",
-                    }}
-                  >
-                    {row.smgScore || "—"}
-                  </td>
+                      <td
+                        style={{
+                          padding: "9px 6px",
+                          textAlign: "center",
+                          fontSize: "11.5px",
+                          color: "var(--text-primary)",
+                          borderRight: "1px solid var(--border-subtle)",
+                        }}
+                      >
+                        {row.smgAch || "—"}
+                      </td>
+                      <td
+                        style={{
+                          padding: "9px 6px",
+                          textAlign: "center",
+                          fontWeight: 700,
+                          fontSize: "11.5px",
+                          color: "var(--text-primary)",
+                          background: "rgba(168, 85, 247, 0.06)",
+                        }}
+                      >
+                        {row.smgScore || "—"}
+                      </td>
+                    </>
+                  )}
                 </tr>
               );
             })}
