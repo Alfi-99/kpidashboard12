@@ -1,7 +1,7 @@
 // components/MonthlyComparisonTable.tsx
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import type { MonthlyKpiRow } from "@/lib/types";
 
 interface MonthlyComparisonTableProps {
@@ -13,15 +13,9 @@ export default function MonthlyComparisonTable({
   rows,
   period = "July 2026",
 }: MonthlyComparisonTableProps) {
-  const [expandedDefIndex, setExpandedDefIndex] = useState<number | null>(null);
-
   if (!rows || rows.length === 0) {
     return null;
   }
-
-  const toggleDef = (idx: number) => {
-    setExpandedDefIndex(expandedDefIndex === idx ? null : idx);
-  };
 
   return (
     <div
@@ -124,7 +118,7 @@ export default function MonthlyComparisonTable({
               <th
                 rowSpan={2}
                 style={{
-                  width: "42px",
+                  width: "45px",
                   textAlign: "center",
                   padding: "11px 6px",
                   fontWeight: 800,
@@ -140,9 +134,9 @@ export default function MonthlyComparisonTable({
               <th
                 rowSpan={2}
                 style={{
-                  minWidth: "220px",
+                  minWidth: "240px",
                   textAlign: "left",
-                  padding: "11px 14px",
+                  padding: "11px 16px",
                   fontWeight: 800,
                   fontSize: "11.5px",
                   color: "#FFFFFF",
@@ -156,24 +150,7 @@ export default function MonthlyComparisonTable({
               <th
                 rowSpan={2}
                 style={{
-                  minWidth: "260px",
-                  maxWidth: "340px",
-                  textAlign: "left",
-                  padding: "11px 14px",
-                  fontWeight: 800,
-                  fontSize: "11.5px",
-                  color: "#FFFFFF",
-                  background: "#0f172a",
-                  borderRight: "1px solid rgba(255, 255, 255, 0.15)",
-                  borderBottom: "1px solid rgba(255, 255, 255, 0.15)",
-                }}
-              >
-                Definisi
-              </th>
-              <th
-                rowSpan={2}
-                style={{
-                  width: "75px",
+                  width: "80px",
                   textAlign: "center",
                   padding: "11px 6px",
                   fontWeight: 800,
@@ -189,7 +166,7 @@ export default function MonthlyComparisonTable({
               <th
                 rowSpan={2}
                 style={{
-                  width: "70px",
+                  width: "75px",
                   textAlign: "center",
                   padding: "11px 6px",
                   fontWeight: 800,
@@ -256,7 +233,7 @@ export default function MonthlyComparisonTable({
               {/* Nasional Subheaders */}
               <th
                 style={{
-                  width: "75px",
+                  width: "80px",
                   textAlign: "center",
                   padding: "7px 4px",
                   fontSize: "11px",
@@ -271,7 +248,7 @@ export default function MonthlyComparisonTable({
               </th>
               <th
                 style={{
-                  width: "85px",
+                  width: "90px",
                   textAlign: "center",
                   padding: "7px 4px",
                   fontSize: "11px",
@@ -286,7 +263,7 @@ export default function MonthlyComparisonTable({
               </th>
               <th
                 style={{
-                  width: "75px",
+                  width: "80px",
                   textAlign: "center",
                   padding: "7px 4px",
                   fontSize: "11px",
@@ -303,7 +280,7 @@ export default function MonthlyComparisonTable({
               {/* BDG Subheaders */}
               <th
                 style={{
-                  width: "75px",
+                  width: "80px",
                   textAlign: "center",
                   padding: "7px 4px",
                   fontSize: "11px",
@@ -318,7 +295,7 @@ export default function MonthlyComparisonTable({
               </th>
               <th
                 style={{
-                  width: "85px",
+                  width: "90px",
                   textAlign: "center",
                   padding: "7px 4px",
                   fontSize: "11px",
@@ -335,7 +312,7 @@ export default function MonthlyComparisonTable({
               {/* SMG Subheaders */}
               <th
                 style={{
-                  width: "75px",
+                  width: "80px",
                   textAlign: "center",
                   padding: "7px 4px",
                   fontSize: "11px",
@@ -350,7 +327,7 @@ export default function MonthlyComparisonTable({
               </th>
               <th
                 style={{
-                  width: "85px",
+                  width: "90px",
                   textAlign: "center",
                   padding: "7px 4px",
                   fontSize: "11px",
@@ -379,7 +356,7 @@ export default function MonthlyComparisonTable({
                     }}
                   >
                     <td
-                      colSpan={4}
+                      colSpan={3}
                       style={{
                         padding: "12px 14px",
                         textAlign: "center",
@@ -485,7 +462,7 @@ export default function MonthlyComparisonTable({
                     </td>
                     <td
                       style={{
-                        padding: "10px 14px",
+                        padding: "10px 16px",
                         fontWeight: 900,
                         fontSize: "13px",
                         color: "var(--text-primary)",
@@ -495,12 +472,6 @@ export default function MonthlyComparisonTable({
                     >
                       {row.parameter}
                     </td>
-                    <td
-                      style={{
-                        padding: "10px 14px",
-                        borderRight: "1px solid var(--border-subtle)",
-                      }}
-                    />
                     <td
                       style={{
                         padding: "10px 6px",
@@ -574,7 +545,6 @@ export default function MonthlyComparisonTable({
 
               // Normal & Sub Parameter Rows
               const isEven = idx % 2 === 0;
-              const isExpanded = expandedDefIndex === idx;
 
               return (
                 <tr
@@ -599,9 +569,10 @@ export default function MonthlyComparisonTable({
                     {row.no}
                   </td>
                   <td
+                    title={row.definisi || undefined}
                     style={{
-                      padding: "9px 14px",
-                      paddingLeft: row.isSubRow ? "28px" : "14px",
+                      padding: "9px 16px",
+                      paddingLeft: row.isSubRow ? "30px" : "16px",
                       fontWeight: row.isSubRow ? 500 : 700,
                       color: row.isSubRow ? "var(--text-secondary)" : "var(--text-primary)",
                       fontSize: "11.5px",
@@ -623,50 +594,6 @@ export default function MonthlyComparisonTable({
                       />
                     )}
                     {row.parameter}
-                  </td>
-                  <td
-                    onClick={() => row.definisi && toggleDef(idx)}
-                    style={{
-                      padding: "9px 14px",
-                      fontSize: "11px",
-                      lineHeight: "1.4",
-                      color: "var(--text-secondary)",
-                      borderRight: "1px solid var(--border-subtle)",
-                      cursor: row.definisi ? "pointer" : "default",
-                      wordBreak: "break-word",
-                    }}
-                    title={row.definisi}
-                  >
-                    {row.definisi ? (
-                      <div>
-                        <div
-                          style={{
-                            display: "-webkit-box",
-                            WebkitLineClamp: isExpanded ? "unset" : 2,
-                            WebkitBoxOrient: "vertical",
-                            overflow: "hidden",
-                          }}
-                        >
-                          {row.definisi}
-                        </div>
-                        {row.definisi.length > 70 && (
-                          <span
-                            style={{
-                              fontSize: "9.5px",
-                              color: "var(--accent-primary)",
-                              fontWeight: 700,
-                              marginTop: "3px",
-                              display: "inline-block",
-                              cursor: "pointer",
-                            }}
-                          >
-                            {isExpanded ? "Tutup" : "Selengkapnya"}
-                          </span>
-                        )}
-                      </div>
-                    ) : (
-                      "—"
-                    )}
                   </td>
                   <td
                     style={{
