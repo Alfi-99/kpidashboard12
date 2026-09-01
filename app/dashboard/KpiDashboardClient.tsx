@@ -6,8 +6,11 @@ import useSWR from "swr";
 import type { KpiDashboardData } from "@/lib/types";
 import AchievementGauge from "@/components/AchievementGauge";
 import KpiSectionTable from "@/components/KpiSectionTable";
+import MonthlyComparisonTable from "@/components/MonthlyComparisonTable";
 import SummaryHighlight from "@/components/SummaryHighlight";
 import TabSelector from "@/components/TabSelector";
+import TopNav from "@/components/TopNav";
+import { logoutAction } from "@/app/actions/auth";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -53,79 +56,65 @@ export default function KpiDashboardClient({ dashboardData }: KpiDashboardClient
     await mutate();
   };
 
+  const handleLogout = () => {
+    logoutAction();
+  };
+
   return (
-    <div className="dot-pattern" style={{ minHeight: "100vh", background: "var(--bg-primary)", fontFamily: "var(--font-body)" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg-primary)" }}>
+      {/* Top Navigation */}
+      <TopNav isDark={isDark} onToggleTheme={() => setIsDark(!isDark)} onLogout={handleLogout} />
+
       <div
         style={{
           display: "grid",
           gridTemplateColumns: "290px 1fr",
-          minHeight: "100vh",
+          minHeight: "calc(100vh - 52px)",
         }}
       >
         {/* ─── Left Sidebar ─── */}
         <aside
-          className="animate-fade-in-up glass-card-static"
+          className="animate-fade-in-up"
           style={{
-            borderRight: `1px solid var(--border-default)`,
-            borderRadius: 0,
-            padding: "30px 24px",
+            background: "var(--sidebar-bg)",
+            borderRight: `1px solid rgba(255, 255, 255, 0.06)`,
+            padding: "28px 24px",
             display: "flex",
             flexDirection: "column",
             gap: "24px",
             position: "sticky",
-            top: 0,
-            height: "100vh",
+            top: "52px",
+            height: "calc(100vh - 52px)",
             overflowY: "auto",
+            color: "var(--sidebar-text)",
           }}
         >
-          {/* Dashboard Title + Theme Toggle */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div>
-              <h1 className="font-heading" style={{
-                fontSize: "21px",
-                fontWeight: 800,
-                color: "var(--accent-primary)",
-                letterSpacing: "-0.03em",
-                lineHeight: 1.2,
-                margin: 0,
-              }}>
-                Dashboard KPI
-              </h1>
-              <p style={{
-                fontSize: "11px",
-                color: "var(--text-muted)",
-                marginTop: "4px",
-                fontWeight: 600,
-                textTransform: "uppercase",
-                letterSpacing: "0.03em",
-              }}>
-                Performance Monitoring
-              </p>
-            </div>
-
-            {/* Theme Toggle */}
-            <button
-              className="theme-toggle"
-              onClick={() => setIsDark(!isDark)}
-              aria-label="Toggle theme"
-            >
-              <div className="theme-toggle-knob">
-                {isDark ? (
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
-                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-                  </svg>
-                ) : (
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
-                    <circle cx="12" cy="12" r="5" />
-                    <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
-                  </svg>
-                )}
-              </div>
-            </button>
+          {/* Dashboard Title */}
+          <div>
+            <h1 style={{
+              fontSize: "21px",
+              fontWeight: 800,
+              color: "#fff",
+              letterSpacing: "-0.03em",
+              lineHeight: 1.2,
+              margin: 0,
+            }}>
+              Dashboard KPI
+            </h1>
+            <p style={{
+              fontSize: "10px",
+              color: "var(--sidebar-muted)",
+              marginTop: "4px",
+              fontWeight: 600,
+              textTransform: "uppercase",
+              letterSpacing: "0.08em",
+            }}>
+              Performance Monitoring
+            </p>
           </div>
 
           {/* Divider */}
-          <div style={{ height: "1px", background: "var(--border-default)" }} />
+          <div style={{ height: "1px", background: "rgba(255, 255, 255, 0.08)" }} />
 
           {/* Total Achievement Donut */}
           <div style={{ display: "flex", justifyContent: "center", padding: "6px 0" }}>
@@ -137,14 +126,14 @@ export default function KpiDashboardClient({ dashboardData }: KpiDashboardClient
           </div>
 
           {/* Divider */}
-          <div style={{ height: "1px", background: "var(--border-default)" }} />
+          <div style={{ height: "1px", background: "rgba(255, 255, 255, 0.08)" }} />
 
           {/* Summary Highlight */}
           <SummaryHighlight items={currentTabData.summaryHighlight} />
         </aside>
 
         {/* ─── Right Content ─── */}
-        <main style={{ padding: "28px 32px", overflowY: "auto" }}>
+        <main className="dot-pattern" style={{ padding: "28px 32px", overflowY: "auto" }}>
           {/* Header Controls */}
           <div style={{
             display: "flex",
@@ -193,28 +182,16 @@ export default function KpiDashboardClient({ dashboardData }: KpiDashboardClient
                 onClick={syncData}
                 disabled={isValidating}
                 aria-label="Sinkronkan data Google Sheets"
+                className="primary-button"
                 style={{
                   minHeight: "38px",
-                  padding: "0 15px",
-                  border: `1px solid var(--border-strong)`,
-                  borderRadius: "8px",
-                  background: isValidating
-                    ? "var(--bg-tertiary)"
-                    : "linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))",
-                  color: isValidating ? "var(--text-muted)" : "#fff",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "8px",
+                  padding: "0 16px",
                   fontSize: "11px",
                   fontWeight: 800,
                   letterSpacing: "0.03em",
                   textTransform: "uppercase",
+                  opacity: isValidating ? 0.7 : 1,
                   cursor: isValidating ? "wait" : "pointer",
-                  opacity: isValidating ? 0.8 : 1,
-                  boxShadow: isValidating ? "none" : "0 6px 18px var(--accent-bg-strong)",
-                  transition: "all 160ms ease",
-                  whiteSpace: "nowrap",
                 }}
               >
                 <svg
@@ -241,6 +218,14 @@ export default function KpiDashboardClient({ dashboardData }: KpiDashboardClient
               </span>
             </div>
           </div>
+
+          {/* Monthly Comparison Table (Juli: BDG vs SMG vs Nasional) */}
+          {currentTabData.monthlyComparison && currentTabData.monthlyComparison.length > 0 && (
+            <MonthlyComparisonTable
+              rows={currentTabData.monthlyComparison}
+              period={activeData.selectedPeriod}
+            />
+          )}
 
           {/* KPI Sections */}
           <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>

@@ -9,17 +9,17 @@ export default function SummaryHighlight({ items }: SummaryHighlightProps) {
   return (
     <div style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
       <h3
-        className="font-heading"
         style={{
           fontSize: "12px",
           fontWeight: 800,
-          color: "var(--text-tertiary)",
+          color: "#948f89",
           textTransform: "uppercase",
           letterSpacing: "0.05em",
           marginBottom: "12px",
+          fontFamily: "inherit",
         }}
       >
-        Summary Highlight : <span style={{ color: "var(--text-muted)", fontWeight: 400, fontSize: "10px", fontStyle: "italic" }}>(Freetext)</span>
+        Summary Highlight : <span style={{ color: "#77726c", fontWeight: 400, fontSize: "10px", fontStyle: "italic" }}>(Freetext)</span>
       </h3>
       <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "8px" }}>
         {items.map((item, index) => (
@@ -30,7 +30,7 @@ export default function SummaryHighlight({ items }: SummaryHighlightProps) {
               alignItems: "flex-start",
               gap: "8px",
               fontSize: "11.5px",
-              color: "var(--text-secondary)",
+              color: "#d9d3cf",
               lineHeight: 1.5,
             }}
           >
@@ -39,7 +39,7 @@ export default function SummaryHighlight({ items }: SummaryHighlightProps) {
               width: "5px",
               height: "5px",
               borderRadius: "50%",
-              background: "var(--accent-primary)",
+              background: "#ff8ca3",
               marginTop: "6px",
               flexShrink: 0,
             }} />

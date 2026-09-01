@@ -115,10 +115,10 @@ export default function KpiSectionTable({
             fontSize: "11px",
             fontWeight: 700,
             color: "#FFFFFF",
-            backgroundColor: headerBgColor,
-            padding: "3px 10px",
+            background: "linear-gradient(135deg, var(--red) 0%, var(--red-wine) 100%)",
+            padding: "4px 12px",
             borderRadius: "6px",
-            border: `1px solid ${headerBgColor}`,
+            boxShadow: "0 2px 8px rgba(111, 16, 39, 0.25)",
           }}>
             Realisasi: {tAchievement}%
           </span>
@@ -149,8 +149,8 @@ export default function KpiSectionTable({
                 fontWeight: 700,
                 color: "#FFFFFF",
                 textAlign: "left",
-                background: "linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%)",
-                borderBottom: `2px solid var(--accent-primary)`,
+                background: "linear-gradient(135deg, var(--red) 0%, var(--red-wine) 100%)",
+                borderBottom: "2px solid var(--red-wine)",
                 borderRight: "1px solid rgba(255, 255, 255, 0.15)",
                 textTransform: "capitalize",
               }}>
@@ -168,8 +168,8 @@ export default function KpiSectionTable({
                 fontWeight: 700,
                 color: "#FFFFFF",
                 textAlign: "center",
-                background: "linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%)",
-                borderBottom: `2px solid var(--accent-primary)`,
+                background: "linear-gradient(135deg, var(--red) 0%, var(--red-wine) 100%)",
+                borderBottom: "2px solid var(--red-wine)",
                 borderRight: "1px solid rgba(255, 255, 255, 0.15)",
                 textTransform: "capitalize",
               }}>
@@ -187,8 +187,8 @@ export default function KpiSectionTable({
                 fontWeight: 700,
                 color: "#FFFFFF",
                 textAlign: "center",
-                background: "linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%)",
-                borderBottom: `2px solid var(--accent-primary)`,
+                background: "linear-gradient(135deg, var(--red) 0%, var(--red-wine) 100%)",
+                borderBottom: "2px solid var(--red-wine)",
                 borderRight: "1px solid rgba(255, 255, 255, 0.15)",
                 textTransform: "capitalize",
               }}>
@@ -206,8 +206,8 @@ export default function KpiSectionTable({
                 fontWeight: 700,
                 color: "#FFFFFF",
                 textAlign: "center",
-                background: "linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%)",
-                borderBottom: `2px solid var(--accent-primary)`,
+                background: "linear-gradient(135deg, var(--red) 0%, var(--red-wine) 100%)",
+                borderBottom: "2px solid var(--red-wine)",
                 borderRight: "1px solid rgba(255, 255, 255, 0.15)",
                 textTransform: "capitalize",
               }}>
@@ -225,8 +225,8 @@ export default function KpiSectionTable({
                 fontWeight: 700,
                 color: "#FFFFFF",
                 textAlign: "center",
-                background: "linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%)",
-                borderBottom: `2px solid var(--accent-primary)`,
+                background: "linear-gradient(135deg, var(--red) 0%, var(--red-wine) 100%)",
+                borderBottom: "2px solid var(--red-wine)",
                 borderRight: `2px solid var(--accent-primary)`,
                 boxShadow: "4px 0 8px -3px rgba(0, 0, 0, 0.2)",
                 textTransform: "capitalize",
@@ -243,8 +243,8 @@ export default function KpiSectionTable({
                   fontWeight: 700,
                   color: "#FFFFFF",
                   textAlign: "center",
-                  background: "linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%)",
-                  borderBottom: `2px solid var(--accent-primary)`,
+                  background: "linear-gradient(135deg, var(--red) 0%, var(--red-wine) 100%)",
+                  borderBottom: "2px solid var(--red-wine)",
                   borderRight: day === daysCount ? "none" : "1px solid rgba(255, 255, 255, 0.15)",
                 }}>
                   {day}

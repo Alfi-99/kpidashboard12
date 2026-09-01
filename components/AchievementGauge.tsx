@@ -26,7 +26,7 @@ export default function AchievementGauge({
   }, [value]);
 
   const dimensions = {
-    lg: { svgSize: 180, strokeWidth: 16, fontSize: "text-[42px]", labelSize: "text-[13px]", suffixSize: "text-[20px]" },
+    lg: { svgSize: 180, strokeWidth: 16, fontSize: "text-[40px]", labelSize: "text-[12px]", suffixSize: "text-[18px]" },
     md: { svgSize: 110, strokeWidth: 8, fontSize: "text-[24px]", labelSize: "text-[10px]", suffixSize: "text-[14px]" },
     sm: { svgSize: 80, strokeWidth: 6, fontSize: "text-[18px]", labelSize: "text-[9px]", suffixSize: "text-[11px]" },
   }[size];
@@ -40,8 +40,13 @@ export default function AchievementGauge({
     <div className="flex flex-col items-center gap-1">
       {label && (
         <span
-          className={`${dimensions.labelSize} font-bold uppercase tracking-wider`}
-          style={{ color: "var(--accent-primary)", marginBottom: "6px" }}
+          className={`${dimensions.labelSize} font-extrabold uppercase tracking-widest`}
+          style={{
+            color: "#FF4D6E",
+            marginBottom: "8px",
+            letterSpacing: "0.1em",
+            fontFamily: "inherit",
+          }}
         >
           {label}
         </span>
@@ -50,11 +55,12 @@ export default function AchievementGauge({
         <svg
           width={dimensions.svgSize}
           height={dimensions.svgSize}
+          style={{ filter: "drop-shadow(0 0 12px rgba(230, 0, 45, 0.35))" }}
         >
           <defs>
-            <linearGradient id="redGaugeGradient" x1="0%" y1="100%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="var(--accent-primary)" />
-              <stop offset="100%" stopColor="var(--accent-secondary)" />
+            <linearGradient id="wineGaugeGradient" x1="0%" y1="100%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#E6002D" />
+              <stop offset="100%" stopColor="#FF4D6E" />
             </linearGradient>
           </defs>
 
@@ -64,7 +70,7 @@ export default function AchievementGauge({
             cy={dimensions.svgSize / 2}
             r={radius}
             fill="none"
-            stroke="var(--accent-bg-strong)"
+            stroke="rgba(255, 255, 255, 0.10)"
             strokeWidth={dimensions.strokeWidth}
           />
 
@@ -74,7 +80,7 @@ export default function AchievementGauge({
             cy={dimensions.svgSize / 2}
             r={radius}
             fill="none"
-            stroke="url(#redGaugeGradient)"
+            stroke="url(#wineGaugeGradient)"
             strokeWidth={dimensions.strokeWidth}
             strokeLinecap="round"
             strokeDasharray={circumference}
@@ -88,11 +94,18 @@ export default function AchievementGauge({
           />
         </svg>
 
-        {/* Center Text */}
+        {/* Center Text — Pure White with Glow for High Contrast */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className={`${dimensions.fontSize} font-black leading-none`} style={{ color: "var(--accent-primary)" }}>
+          <span
+            className={`${dimensions.fontSize} font-black leading-none`}
+            style={{
+              color: "#FFFFFF",
+              fontFamily: "inherit",
+              textShadow: "0 2px 10px rgba(0, 0, 0, 0.4)",
+            }}
+          >
             {animatedValue}
-            <span className={dimensions.suffixSize}>{suffix || "%"}</span>
+            <span className={dimensions.suffixSize} style={{ color: "#FF8CA3" }}>{suffix || "%"}</span>
           </span>
         </div>
       </div>

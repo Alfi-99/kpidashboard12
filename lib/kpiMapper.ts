@@ -1,4 +1,4 @@
-import type { KpiDashboardData, TabData, KpiSection, KpiParameter } from "./types";
+import type { KpiDashboardData, TabData, KpiSection, KpiParameter, MonthlyKpiRow } from "./types";
 import { mockDashboardData } from "./mockDataNew";
 
 const DEFAULT_PERIOD = "2026-07";
@@ -9,12 +9,13 @@ type TabDefinition = {
   tabName: string;
   tabKey: string;
   markers: string[];
+  monthlySheetName: string;
   fallbackIndex: number;
 };
 
 const TAB_DEFINITIONS: TabDefinition[] = [
-  { tabName: "Call Center", tabKey: "callCenter", markers: ["callcenter"], fallbackIndex: 0 },
-  { tabName: "e-Care", tabKey: "eCare", markers: ["ecare"], fallbackIndex: 1 },
+  { tabName: "Call Center", tabKey: "callCenter", markers: ["callcenter"], monthlySheetName: "Monthly - CallCenter", fallbackIndex: 0 },
+  { tabName: "e-Care", tabKey: "eCare", markers: ["ecare"], monthlySheetName: "Monthly - Ecare", fallbackIndex: 1 },
 ];
 
 function clean(value: string | undefined): string {
@@ -31,29 +32,44 @@ function parsePercentage(value: string | undefined, fallback = 0): number {
 }
 
 function parseCSV(csvText: string): string[][] {
-  return csvText.split(/\r?\n/).map((line) => {
-    const values: string[] = [];
-    let value = "";
-    let quoted = false;
+  const rows: string[][] = [];
+  let currentRow: string[] = [];
+  let currentVal = "";
+  let inQuotes = false;
 
-    for (let index = 0; index < line.length; index++) {
-      const char = line[index];
-      if (char === '"' && line[index + 1] === '"' && quoted) {
-        value += '"';
-        index++;
-      } else if (char === '"') {
-        quoted = !quoted;
-      } else if (char === "," && !quoted) {
-        values.push(value.trim());
-        value = "";
+  for (let i = 0; i < csvText.length; i++) {
+    const c = csvText[i];
+    const next = csvText[i + 1];
+
+    if (c === '"') {
+      if (inQuotes && next === '"') {
+        currentVal += '"';
+        i++;
       } else {
-        value += char;
+        inQuotes = !inQuotes;
       }
+    } else if (c === "," && !inQuotes) {
+      currentRow.push(currentVal.trim());
+      currentVal = "";
+    } else if ((c === "\r" || c === "\n") && !inQuotes) {
+      if (c === "\r" && next === "\n") i++;
+      currentRow.push(currentVal.trim());
+      if (currentRow.some((cell) => cell.length > 0)) {
+        rows.push(currentRow);
+      }
+      currentRow = [];
+      currentVal = "";
+    } else {
+      currentVal += c;
     }
-
-    values.push(value.trim());
-    return values;
-  });
+  }
+  if (currentVal || currentRow.length > 0) {
+    currentRow.push(currentVal.trim());
+    if (currentRow.some((cell) => cell.length > 0)) {
+      rows.push(currentRow);
+    }
+  }
+  return rows;
 }
 
 async function fetchPublicSheetCsv(sheetId: string, sheetName: string): Promise<string[][]> {
@@ -327,6 +343,163 @@ function parseRekapTab(
   };
 }
 
+function parseMonthlyComparison(rows: string[][]): MonthlyKpiRow[] {
+  if (!rows || rows.length < 2) return [];
+
+  const row0 = rows[0] || [];
+  const row1 = rows[1] || [];
+
+  // Find column for Jul-26 or July
+  let julColIndex = -1;
+  for (let c = 0; c < row0.length; c++) {
+    const header = normalize(row0[c]);
+    if (header.includes("jul26") || header.includes("jul") || header.includes("july")) {
+      julColIndex = c;
+      break;
+    }
+  }
+  if (julColIndex === -1) {
+    for (let c = 0; c < row1.length; c++) {
+      const header = normalize(row1[c]);
+      if (header === "nasional" || header.includes("nasional")) {
+        julColIndex = c;
+        break;
+      }
+    }
+  }
+  if (julColIndex === -1) {
+    julColIndex = Math.max(0, (rows[0] ? rows[0].length : 14) - 7);
+  }
+
+  // Find Target and Bobot columns
+  let targetCol = 5;
+  let bobotCol = 6;
+  for (let c = 0; c < Math.min(10, row0.length); c++) {
+    const h0 = normalize(row0[c]);
+    const h1 = normalize(row1[c]);
+    if (h0 === "target" || h1 === "target") targetCol = c;
+    if (h0 === "bobot" || h1 === "bobot") bobotCol = c;
+  }
+
+  const result: MonthlyKpiRow[] = [];
+
+  const startRow =
+    normalize(row0[1]) === "parameter" &&
+    normalize(row1[1]) === "" &&
+    (row1[julColIndex] === "" || normalize(row1[julColIndex]) === "nasional")
+      ? normalize(row1[julColIndex]) === "nasional"
+        ? 2
+        : 1
+      : 1;
+
+  for (let r = startRow; r < rows.length; r++) {
+    const row = rows[r] || [];
+    const no = clean(row[0]);
+    let param = clean(row[1]);
+    const def = clean(row[2]);
+    const target = clean(row[targetCol]);
+    const bobot = clean(row[bobotCol]);
+
+    const nasionalAch = clean(row[julColIndex]);
+    const nasionalAchTarget = clean(row[julColIndex + 1]);
+    const nasionalScore = clean(row[julColIndex + 2]);
+    const bdgAch = clean(row[julColIndex + 3]);
+    const bdgScore = clean(row[julColIndex + 4]);
+    const smgAch = clean(row[julColIndex + 5]);
+    const smgScore = clean(row[julColIndex + 6]);
+
+    const normParam = normalize(param);
+    const normDef = normalize(def);
+
+    // Is it a Total row?
+    const isTotalRow =
+      normParam === "total" ||
+      (no === "" && param === "" && def === "" && (bobot === "100%" || bobot === "100"));
+
+    if (isTotalRow) {
+      result.push({
+        no: "",
+        parameter: "Total",
+        definisi: "",
+        target: "",
+        bobot: bobot || "100%",
+        nasionalAch,
+        nasionalAchTarget,
+        nasionalScore,
+        bdgAch,
+        bdgScore,
+        smgAch,
+        smgScore,
+        isTotalRow: true,
+      });
+      continue;
+    }
+
+    // Is it a Category Header row? (Revenue, Customer Experience, Internal Process)
+    const isCategory =
+      (normParam === "revenue" ||
+        normParam === "customerexperience" ||
+        normParam === "internalprocess") &&
+      !target;
+
+    if (isCategory) {
+      result.push({
+        no,
+        parameter: param,
+        definisi: def,
+        target,
+        bobot,
+        nasionalAch,
+        nasionalAchTarget,
+        nasionalScore,
+        bdgAch,
+        bdgScore,
+        smgAch,
+        smgScore,
+        isCategoryRow: true,
+      });
+      continue;
+    }
+
+    // Sub-row without parameter title
+    let isSubRow = false;
+    if (!param && def) {
+      isSubRow = true;
+      if (normDef.includes("komplainpelangganmobile")) {
+        param = "FCR Mobile (Komplain)";
+      } else if (normDef.includes("komplainreciprocal")) {
+        param = "FCR Fixed (Reciprocal)";
+      } else if (normDef.includes("inslafixed")) {
+        param = "In SLA Fixed";
+      } else if (normDef.includes("closeratetiketmobile")) {
+        param = "Close rate tiket Mobile";
+      } else {
+        param = def.slice(0, 30);
+      }
+    }
+
+    if (param || def || target || bobot || nasionalScore || bdgScore || smgScore) {
+      result.push({
+        no,
+        parameter: param,
+        definisi: def,
+        target,
+        bobot,
+        nasionalAch,
+        nasionalAchTarget,
+        nasionalScore,
+        bdgAch,
+        bdgScore,
+        smgAch,
+        smgScore,
+        isSubRow,
+      });
+    }
+  }
+
+  return result;
+}
+
 function periodLabel(period: string): string {
   const { year, month } = periodParts(period);
   return new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric", timeZone: "UTC" }).format(
@@ -344,17 +517,32 @@ export async function getKpiData(period = DEFAULT_PERIOD): Promise<KpiDashboardD
     : PUBLIC_SHEET_ID;
 
   try {
-    const [rekapRows, dailyRows, freetextRows] = await Promise.all([
+    const [rekapRows, dailyRows, freetextRows, ccMonthlyRows, ecMonthlyRows] = await Promise.all([
       fetchPublicSheetCsv(sheetId, "All Rekap"),
       fetchPublicSheetCsv(sheetId, "Daily"),
       fetchPublicSheetCsv(sheetId, "Freetext").catch(() => []),
+      fetchPublicSheetCsv(sheetId, "Monthly - CallCenter").catch(() => []),
+      fetchPublicSheetCsv(sheetId, "Monthly - Ecare").catch(() => []),
     ]);
 
     const freetextHighlightsMap = parseFreetext(freetextRows);
+    const monthlyComparisonMap: Record<string, MonthlyKpiRow[]> = {
+      callCenter: parseMonthlyComparison(ccMonthlyRows),
+      eCare: parseMonthlyComparison(ecMonthlyRows),
+    };
 
     const tabs = TAB_DEFINITIONS.map((definition) => {
       const highlights = freetextHighlightsMap[definition.tabKey];
-      return parseRekapTab(rekapRows, dailyRows, definition, period, highlights) ?? mockDashboardData.tabs[definition.fallbackIndex];
+      const fallback = mockDashboardData.tabs[definition.fallbackIndex];
+      const tabData = parseRekapTab(rekapRows, dailyRows, definition, period, highlights) ?? fallback;
+      const monthlyComparison = monthlyComparisonMap[definition.tabKey]?.length > 0
+        ? monthlyComparisonMap[definition.tabKey]
+        : fallback.monthlyComparison;
+
+      return {
+        ...tabData,
+        monthlyComparison,
+      };
     });
 
     return { tabs, selectedPeriod: periodLabel(period) };

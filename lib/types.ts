@@ -37,12 +37,31 @@ export interface KpiSection {
   parameters: KpiParameter[];
 }
 
+export interface MonthlyKpiRow {
+  no: string;
+  parameter: string;
+  definisi: string;
+  target: string;
+  bobot: string;
+  nasionalAch: string;
+  nasionalAchTarget: string;
+  nasionalScore: string;
+  bdgAch: string;
+  bdgScore: string;
+  smgAch: string;
+  smgScore: string;
+  isCategoryRow?: boolean;
+  isTotalRow?: boolean;
+  isSubRow?: boolean;
+}
+
 export interface TabData {
   tabName: string;       // "Call Center" | "e-Care"
   tabKey: string;        // "callCenter" | "eCare"
   totalAchievement: number;
   sections: KpiSection[];
   summaryHighlight: string[];
+  monthlyComparison?: MonthlyKpiRow[];
 }
 
 export interface KpiDashboardData {
