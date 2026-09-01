@@ -73,18 +73,21 @@ function parseCSV(csvText: string): string[][] {
   return rows;
 }
 
+const SHEET_GIDS: Record<string, string> = {
+  "All Rekap": "1217380245",
+  "Daily": "781575490",
+  "Monthly - CallCenter": "2146457801",
+  "Monthly - Ecare": "1203442408",
+  "Freetext": "1041510202",
+};
+
 async function fetchPublicSheetCsv(sheetId: string, sheetName: string): Promise<string[][]> {
-  // The regular export endpoint preserves merged title rows in All Rekap.
-  // GViz treats those rows as inferred headers and drops KPI names.
   const cacheBust = Date.now();
-  let url = "";
-  if (sheetName === "All Rekap") {
-    url = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${ALL_REKAP_GID}&t=${cacheBust}`;
-  } else if (sheetName === "Daily") {
-    url = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${DAILY_SHEET_GID}&t=${cacheBust}`;
-  } else {
-    url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}&t=${cacheBust}`;
-  }
+  const gid = SHEET_GIDS[sheetName];
+  const url = gid
+    ? `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}&t=${cacheBust}`
+    : `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}&t=${cacheBust}`;
+
   const response = await fetch(url, { cache: "no-store" });
   if (!response.ok) throw new Error(`Failed to fetch ${sheetName}: ${response.status}`);
   return parseCSV(await response.text());
@@ -344,32 +347,42 @@ function parseRekapTab(
   };
 }
 
-function parseMonthlyComparison(rows: string[][]): MonthlyKpiRow[] {
+const MONTH_NAMES_SHORT = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+
+function parseMonthlyComparison(rows: string[][], period: string): MonthlyKpiRow[] {
   if (!rows || rows.length < 2) return [];
 
   const row0 = rows[0] || [];
   const row1 = rows[1] || [];
 
-  // Find column for Jul-26 or July
-  let julColIndex = -1;
+  const { year, month } = periodParts(period);
+  const shortMonth = MONTH_NAMES_SHORT[month - 1] || "";
+  const yy = String(year).slice(-2);
+
+  const tokens = [
+    `${shortMonth}-${yy}`,
+    `${shortMonth}${yy}`,
+    shortMonth,
+  ];
+
+  // Find column for the requested period in row0
+  let periodColIndex = -1;
   for (let c = 0; c < row0.length; c++) {
     const header = normalize(row0[c]);
-    if (header.includes("jul26") || header.includes("jul") || header.includes("july")) {
-      julColIndex = c;
+    if (tokens.some((t) => header.includes(normalize(t)))) {
+      periodColIndex = c;
       break;
     }
   }
-  if (julColIndex === -1) {
-    for (let c = 0; c < row1.length; c++) {
-      const header = normalize(row1[c]);
-      if (header === "nasional" || header.includes("nasional")) {
-        julColIndex = c;
-        break;
-      }
+
+  // Check if BDG and SMG columns exist under this period column
+  let hasBdgSmg = false;
+  if (periodColIndex !== -1) {
+    const h1BDG = normalize(row1[periodColIndex + 3] || "");
+    const h1SMG = normalize(row1[periodColIndex + 5] || "");
+    if (h1BDG.includes("bdg") || h1SMG.includes("smg")) {
+      hasBdgSmg = true;
     }
-  }
-  if (julColIndex === -1) {
-    julColIndex = Math.max(0, (rows[0] ? rows[0].length : 14) - 7);
   }
 
   // Find Target and Bobot columns
@@ -387,10 +400,8 @@ function parseMonthlyComparison(rows: string[][]): MonthlyKpiRow[] {
   const startRow =
     normalize(row0[1]) === "parameter" &&
     normalize(row1[1]) === "" &&
-    (row1[julColIndex] === "" || normalize(row1[julColIndex]) === "nasional")
-      ? normalize(row1[julColIndex]) === "nasional"
-        ? 2
-        : 1
+    (periodColIndex === -1 || row1[periodColIndex] === "" || normalize(row1[periodColIndex]).includes("nasional") || normalize(row1[periodColIndex]).includes("ach"))
+      ? 2
       : 1;
 
   for (let r = startRow; r < rows.length; r++) {
@@ -401,13 +412,25 @@ function parseMonthlyComparison(rows: string[][]): MonthlyKpiRow[] {
     const target = clean(row[targetCol]);
     const bobot = clean(row[bobotCol]);
 
-    const nasionalAch = clean(row[julColIndex]);
-    const nasionalAchTarget = clean(row[julColIndex + 1]);
-    const nasionalScore = clean(row[julColIndex + 2]);
-    const bdgAch = clean(row[julColIndex + 3]);
-    const bdgScore = clean(row[julColIndex + 4]);
-    const smgAch = clean(row[julColIndex + 5]);
-    const smgScore = clean(row[julColIndex + 6]);
+    let nasionalAch = "0%";
+    let nasionalAchTarget = "0%";
+    let nasionalScore = "0.00%";
+    let bdgAch = "0%";
+    let bdgScore = "0.00%";
+    let smgAch = "0%";
+    let smgScore = "0.00%";
+
+    if (periodColIndex !== -1) {
+      nasionalAch = clean(row[periodColIndex]) || "0%";
+      nasionalAchTarget = clean(row[periodColIndex + 1]) || "0%";
+      nasionalScore = clean(row[periodColIndex + 2]) || "0.00%";
+      if (hasBdgSmg) {
+        bdgAch = clean(row[periodColIndex + 3]) || "0%";
+        bdgScore = clean(row[periodColIndex + 4]) || "0.00%";
+        smgAch = clean(row[periodColIndex + 5]) || "0%";
+        smgScore = clean(row[periodColIndex + 6]) || "0.00%";
+      }
+    }
 
     const normParam = normalize(param);
     const normDef = normalize(def);
@@ -424,12 +447,12 @@ function parseMonthlyComparison(rows: string[][]): MonthlyKpiRow[] {
         definisi: "",
         target: "",
         bobot: bobot || "100%",
-        nasionalAch,
-        nasionalAchTarget,
+        nasionalAch: periodColIndex !== -1 ? nasionalAch : "",
+        nasionalAchTarget: periodColIndex !== -1 ? nasionalAchTarget : "",
         nasionalScore,
-        bdgAch,
+        bdgAch: hasBdgSmg ? bdgAch : "",
         bdgScore,
-        smgAch,
+        smgAch: hasBdgSmg ? smgAch : "",
         smgScore,
         isTotalRow: true,
       });
@@ -450,12 +473,12 @@ function parseMonthlyComparison(rows: string[][]): MonthlyKpiRow[] {
         definisi: def,
         target,
         bobot,
-        nasionalAch,
-        nasionalAchTarget,
+        nasionalAch: "",
+        nasionalAchTarget: "",
         nasionalScore,
-        bdgAch,
+        bdgAch: "",
         bdgScore,
-        smgAch,
+        smgAch: "",
         smgScore,
         isCategoryRow: true,
       });
@@ -528,8 +551,8 @@ export async function getKpiData(period = DEFAULT_PERIOD): Promise<KpiDashboardD
 
     const freetextHighlightsMap = parseFreetext(freetextRows);
     const monthlyComparisonMap: Record<string, MonthlyKpiRow[]> = {
-      callCenter: parseMonthlyComparison(ccMonthlyRows),
-      eCare: parseMonthlyComparison(ecMonthlyRows),
+      callCenter: parseMonthlyComparison(ccMonthlyRows, period),
+      eCare: parseMonthlyComparison(ecMonthlyRows, period),
     };
 
     const tabs = TAB_DEFINITIONS.map((definition) => {
@@ -538,7 +561,7 @@ export async function getKpiData(period = DEFAULT_PERIOD): Promise<KpiDashboardD
       const tabData = parseRekapTab(rekapRows, dailyRows, definition, period, highlights) ?? fallback;
       const monthlyComparison = monthlyComparisonMap[definition.tabKey]?.length > 0
         ? monthlyComparisonMap[definition.tabKey]
-        : fallback.monthlyComparison;
+        : (fallback.monthlyComparison ?? []);
 
       return {
         ...tabData,
