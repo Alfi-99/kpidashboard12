@@ -301,19 +301,25 @@ function parseRekapTab(
         if (isMarker(parameterName, definition) || normalize(parameterName) === "target") continue;
         const header = segment[rowIndex + 1] ?? [];
         const periodRow = findPeriodRow(segment, rowIndex + 1, column, period);
-        if (!periodRow) continue;
+        const anyDataRow = segment[rowIndex + 2] ?? [];
 
-        const findHeader = (names: string[]) => {
+        const findHeader = (names: string[], targetRow: string[]) => {
           const index = header.findIndex((cell, headerColumn) => headerColumn >= column && names.includes(normalize(cell)));
-          return index >= 0 ? clean(periodRow[index]) : "";
+          return index >= 0 ? clean(targetRow[index]) : "";
         };
+
+        const targetVal = findHeader(["target"], periodRow || anyDataRow);
+        const bobotTargetVal = findHeader(["bobottarget"], periodRow || anyDataRow);
+        const mtdVal = periodRow ? findHeader(["mtdachievement"], periodRow) : "—";
+        const bobotAchVal = periodRow ? findHeader(["bobotachievement"], periodRow) : "—";
+
         const daily = dailyValues.get(comparableName(parameterName));
         const parameter: KpiParameter = {
           name: parameterName,
-          target: findHeader(["target"]),
-          bobotTarget: findHeader(["bobottarget"]) || undefined,
-          mtdAchievement: findHeader(["mtdachievement"]) || undefined,
-          robotAchievement: findHeader(["bobotachievement"]) || undefined,
+          target: targetVal,
+          bobotTarget: bobotTargetVal || undefined,
+          mtdAchievement: mtdVal || "—",
+          robotAchievement: bobotAchVal || undefined,
           dailyValues: daily && Object.keys(daily).length > 0 ? daily : undefined,
           isSubRow: ["regular", "priority", "357", "byu", "videocall"].includes(normalize(parameterName)),
         };
@@ -322,13 +328,12 @@ function parseRekapTab(
     }
   }
 
-  const fallback = mockDashboardData.tabs[definition.fallbackIndex];
   const sections: KpiSection[] = Object.entries(sectionParameters)
     .filter(([, parameters]) => parameters.length > 0)
     .map(([name, parameters]) => ({ 
       name, 
-      weight: sectionWeights[name], 
-      target: sectionTargets[name],
+      weight: sectionWeights[name] || 0, 
+      target: sectionTargets[name] || (name === "Revenue" ? (definition.tabKey === "eCare" ? 10 : 20) : 45),
       parameters 
     }));
 
@@ -336,7 +341,7 @@ function parseRekapTab(
 
   const summaryHighlight = freetextHighlights && freetextHighlights.length > 0
     ? freetextHighlights
-    : fallback.summaryHighlight;
+    : [];
 
   return {
     tabName: definition.tabName,
