@@ -117,11 +117,11 @@ export default function KpiDashboardClient({ dashboardData }: KpiDashboardClient
           {/* Divider */}
           <div style={{ height: "1px", background: "rgba(255, 255, 255, 0.08)" }} />
 
-          {/* Total Achievement Donut */}
+          {/* Achievement Nasional Donut */}
           <div style={{ display: "flex", justifyContent: "center", padding: "6px 0" }}>
             <AchievementGauge
               value={currentTabData.totalAchievement}
-              label="Total Achievement"
+              label="Achievement Nasional"
               size="lg"
             />
           </div>

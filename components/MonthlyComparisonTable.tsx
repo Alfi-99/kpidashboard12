@@ -10,6 +10,90 @@ interface MonthlyComparisonTableProps {
   hasComparison?: boolean;
 }
 
+const isLowerBetterParam = (paramName: string) => {
+  const norm = paramName.toLowerCase();
+  return (
+    norm.includes("repeat") ||
+    norm.includes("rcr") ||
+    norm.includes("caps") ||
+    norm.includes("respond time") ||
+    norm.includes("response time")
+  );
+};
+
+const parseMetricNum = (valStr?: string): number | null => {
+  if (!valStr || valStr === "—" || valStr === "" || valStr === "0%" || valStr === "0") return null;
+  const cleanStr = valStr.replace(/,/g, ".").replace(/[^0-9.-]+/g, "");
+  const num = parseFloat(cleanStr);
+  return isNaN(num) ? null : num;
+};
+
+const renderAchievementBadge = (paramName: string, targetStr?: string, achStr?: string) => {
+  if (!achStr || achStr === "—" || achStr === "") {
+    return <span style={{ color: "var(--text-muted)" }}>—</span>;
+  }
+  
+  const targetNum = parseMetricNum(targetStr);
+  const achNum = parseMetricNum(achStr);
+  
+  if (targetNum === null || achNum === null) {
+    return <span>{achStr}</span>;
+  }
+  
+  const isLowerBetter = isLowerBetterParam(paramName);
+  const isPass = isLowerBetter ? achNum <= targetNum : achNum >= targetNum;
+  
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "2px 7px",
+        borderRadius: "5px",
+        fontSize: "11px",
+        fontWeight: 750,
+        backgroundColor: isPass ? "rgba(16, 185, 129, 0.14)" : "rgba(239, 68, 68, 0.14)",
+        color: isPass ? "#10B981" : "#EF4444",
+        border: `1px solid ${isPass ? "rgba(16, 185, 129, 0.3)" : "rgba(239, 68, 68, 0.3)"}`,
+        whiteSpace: "nowrap",
+        letterSpacing: "-0.01em",
+      }}
+    >
+      {achStr}
+    </span>
+  );
+};
+
+const renderAchTargetBadge = (achTargetStr?: string) => {
+  if (!achTargetStr || achTargetStr === "—" || achTargetStr === "") {
+    return <span style={{ color: "var(--text-muted)" }}>—</span>;
+  }
+  const num = parseMetricNum(achTargetStr);
+  if (num === null) return <span>{achTargetStr}</span>;
+  
+  const isPass = num >= 100;
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "2px 7px",
+        borderRadius: "5px",
+        fontSize: "11px",
+        fontWeight: 750,
+        backgroundColor: isPass ? "rgba(16, 185, 129, 0.12)" : "rgba(239, 68, 68, 0.12)",
+        color: isPass ? "#10B981" : "#EF4444",
+        border: `1px solid ${isPass ? "rgba(16, 185, 129, 0.25)" : "rgba(239, 68, 68, 0.25)"}`,
+        whiteSpace: "nowrap",
+      }}
+    >
+      {achTargetStr}
+    </span>
+  );
+};
+
 export default function MonthlyComparisonTable({
   rows,
   period = "July 2026",
@@ -671,22 +755,20 @@ export default function MonthlyComparisonTable({
                       padding: "9px 6px",
                       textAlign: "center",
                       fontSize: "11.5px",
-                      color: "var(--text-primary)",
                       borderRight: "1px solid var(--border-subtle)",
                     }}
                   >
-                    {row.nasionalAch || "—"}
+                    {renderAchievementBadge(row.parameter, row.target, row.nasionalAch)}
                   </td>
                   <td
                     style={{
                       padding: "9px 6px",
                       textAlign: "center",
                       fontSize: "11.5px",
-                      color: "var(--text-secondary)",
                       borderRight: "1px solid var(--border-subtle)",
                     }}
                   >
-                    {row.nasionalAchTarget || "—"}
+                    {renderAchTargetBadge(row.nasionalAchTarget)}
                   </td>
                   <td
                     style={{
@@ -712,11 +794,10 @@ export default function MonthlyComparisonTable({
                           padding: "9px 6px",
                           textAlign: "center",
                           fontSize: "11.5px",
-                          color: "var(--text-primary)",
                           borderRight: "1px solid var(--border-subtle)",
                         }}
                       >
-                        {row.bdgAch || "—"}
+                        {renderAchievementBadge(row.parameter, row.target, row.bdgAch)}
                       </td>
                       <td
                         style={{
@@ -737,11 +818,10 @@ export default function MonthlyComparisonTable({
                           padding: "9px 6px",
                           textAlign: "center",
                           fontSize: "11.5px",
-                          color: "var(--text-primary)",
                           borderRight: "1px solid var(--border-subtle)",
                         }}
                       >
-                        {row.smgAch || "—"}
+                        {renderAchievementBadge(row.parameter, row.target, row.smgAch)}
                       </td>
                       <td
                         style={{

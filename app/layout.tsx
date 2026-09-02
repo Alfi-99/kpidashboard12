@@ -10,9 +10,17 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Dashboard KPI — Key Performance Indicators",
+  title: "KPI Dashboard — Performance & Analytics",
   description:
     "Dashboard KPI untuk monitoring pencapaian Revenue, CX, Operational, dan metrik performa lainnya secara real-time.",
+  icons: {
+    icon: [
+      { url: "/kpi-logo.svg", type: "image/svg+xml" },
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
+    shortcut: "/kpi-logo.svg",
+    apple: "/kpi-logo.svg",
+  },
 };
 
 export default function RootLayout({

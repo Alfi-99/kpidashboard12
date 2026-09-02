@@ -48,11 +48,11 @@ const getMtdColor = (paramName: string, targetStr?: string, mtdStr?: string) => 
   const mtdNum = parseFloat(mtdStr.replace(/,/g, ".").replace(/[^0-9.-]+/g, ""));
   
   const lowerIsBetterParams = [
-    "caps number",
-    "repeat mobile",
-    "repeat fixed",
+    "caps",
+    "repeat",
+    "rcr",
     "response time",
-    "response time email"
+    "respond time",
   ];
   
   const isLowerBetter = lowerIsBetterParams.some(p => paramName.toLowerCase().includes(p));
