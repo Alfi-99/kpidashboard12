@@ -379,17 +379,16 @@ function ParameterChartCard({
 }
 
 export default function HomeOverviewClient({ initialData }: HomeOverviewClientProps) {
-  const [selectedPeriod, setSelectedPeriod] = useState("2026-07");
   const [isDark, setIsDark] = useState(false);
+  const [activeChannel, setActiveChannel] = useState<"callCenter" | "eCare">("callCenter");
   const [masterChartType, setMasterChartType] = useState<"line" | "bar">("line");
   const [paramChartMode, setParamChartMode] = useState<"line" | "bar">("line");
-  const [channelFilter, setChannelFilter] = useState<string>("ALL");
   const [categoryFilter, setCategoryFilter] = useState<string>("ALL");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState<string>("");
 
   const { data: liveData, isValidating, mutate } = useSWR<KpiDashboardData>(
-    `/api/kpi?period=${selectedPeriod}`,
+    `/api/kpi?period=2026-07`,
     fetcher,
     {
       fallbackData: initialData,
@@ -408,11 +407,18 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
     logoutAction();
   };
 
-  // Extract score for Call Center and e-Care
-  const ccTab = activeData.tabs.find((t) => t.tabKey === "callCenter") || activeData.tabs[0];
-  const ecTab = activeData.tabs.find((t) => t.tabKey === "eCare") || activeData.tabs[1];
+  const isCC = activeChannel === "callCenter";
+  const channelLabel = isCC ? "Call Center" : "e-Care";
+  const channelColor = isCC ? "#E6002D" : "#0284c7";
+  const channelColorLight = isCC ? "rgba(230, 0, 45, 0.12)" : "rgba(2, 132, 199, 0.12)";
+  const channelGradient = isCC
+    ? "linear-gradient(90deg, #E6002D, #FF4D6E)"
+    : "linear-gradient(90deg, #0284c7, #38bdf8)";
 
-  const getScore = (tab: typeof ccTab) => {
+  // Extract tab data for active channel
+  const activeTab = activeData.tabs.find((t) => t.tabKey === activeChannel) || activeData.tabs[0];
+
+  const getScore = (tab: typeof activeTab) => {
     if (!tab) return 100;
     const parsed = tab.regionalComparison?.nasionalScore
       ? parseFloat(tab.regionalComparison.nasionalScore.replace(/,/g, ".").replace(/[^0-9.-]+/g, ""))
@@ -420,22 +426,44 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
     return parsed && !isNaN(parsed) && parsed > 0 ? parsed : tab.totalAchievement;
   };
 
-  const ccScore = getScore(ccTab);
-  const ecScore = getScore(ecTab);
-  const overallNasionalScore = Number(((ccScore + ecScore) / 2).toFixed(2));
+  const channelScore = getScore(activeTab);
 
-  // Overall monthly trend data
-  const overallTrendsData = activeData.overallTrends && activeData.overallTrends.length > 0
-    ? activeData.overallTrends
-    : DEFAULT_OVERALL_TRENDS;
+  // Category scores from sections
+  const revenueSection = activeTab?.sections?.find((s) => s.name.toLowerCase().includes("revenue"));
+  const cxSection = activeTab?.sections?.find((s) => s.name.toLowerCase().includes("customer"));
+  const ipSection = activeTab?.sections?.find((s) => s.name.toLowerCase().includes("internal"));
 
-  // Parameter histories
-  const parameterHistories = activeData.parameterHistories || [];
+  // Overall monthly trend data — filtered to active channel only
+  const overallTrendsData = useMemo(() => {
+    const raw = activeData.overallTrends && activeData.overallTrends.length > 0
+      ? activeData.overallTrends
+      : DEFAULT_OVERALL_TRENDS;
+
+    return raw.map((m) => ({
+      month: m.month,
+      score: isCC ? m.callCenter : m.eCare,
+      target: m.target,
+    }));
+  }, [activeData.overallTrends, isCC]);
+
+  // Category trends for the active channel
+  const categoryTrendsForChannel = useMemo(() => {
+    if (!activeData.categoryTrends) return [];
+    return activeData.categoryTrends.filter((ct) =>
+      isCC ? ct.channel === "Call Center" : ct.channel === "e-Care"
+    );
+  }, [activeData.categoryTrends, isCC]);
+
+  // Parameter histories — filtered to active channel
+  const parameterHistories = useMemo(() => {
+    return (activeData.parameterHistories || []).filter((p) =>
+      isCC ? p.channel === "Call Center" : p.channel === "e-Care"
+    );
+  }, [activeData.parameterHistories, isCC]);
 
   // Filtered parameter histories
   const filteredParameters = useMemo(() => {
     return parameterHistories.filter((p) => {
-      if (channelFilter !== "ALL" && p.channel !== channelFilter) return false;
       if (categoryFilter !== "ALL" && !p.category.toLowerCase().includes(categoryFilter.toLowerCase())) return false;
       if (statusFilter === "PASS" && !p.isPass) return false;
       if (statusFilter === "MISS" && p.isPass) return false;
@@ -445,7 +473,7 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
       }
       return true;
     });
-  }, [parameterHistories, channelFilter, categoryFilter, statusFilter, searchQuery]);
+  }, [parameterHistories, categoryFilter, statusFilter, searchQuery]);
 
   const totalParams = parameterHistories.length;
   const passedParams = parameterHistories.filter((p) => p.isPass).length;
@@ -468,11 +496,12 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
             flexWrap: "wrap",
             gap: "20px",
             marginBottom: "28px",
-            background: "linear-gradient(135deg, rgba(230, 0, 45, 0.08) 0%, rgba(74, 0, 14, 0.12) 100%)",
+            background: `linear-gradient(135deg, ${channelColorLight} 0%, rgba(74, 0, 14, 0.06) 100%)`,
             border: "1px solid var(--border-strong)",
             borderRadius: "16px",
             padding: "24px 28px",
             backdropFilter: "blur(12px)",
+            transition: "background 0.4s ease",
           }}
         >
           <div>
@@ -485,8 +514,9 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
                   width: "32px",
                   height: "32px",
                   borderRadius: "8px",
-                  background: "linear-gradient(135deg, #E6002D 0%, #99001A 100%)",
-                  boxShadow: "0 2px 10px rgba(230, 0, 45, 0.35)",
+                  background: `linear-gradient(135deg, ${channelColor} 0%, ${isCC ? "#99001A" : "#0369a1"} 100%)`,
+                  boxShadow: `0 2px 10px ${isCC ? "rgba(230, 0, 45, 0.35)" : "rgba(2, 132, 199, 0.35)"}`,
+                  transition: "all 0.3s ease",
                 }}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4">
@@ -506,42 +536,81 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
                   letterSpacing: "-0.02em",
                 }}
               >
-                Overview Semua KPI &amp; Parameter
+                Overview KPI — {channelLabel}
               </h1>
             </div>
             <p style={{ margin: 0, fontSize: "13px", color: "var(--text-secondary)", fontWeight: 500 }}>
-              Monitoring Komprehensif Tren Kinerja Bulanan (Januari – {activeData.selectedPeriod}) dari Sheet Monthly Call Center &amp; e-Care
+              Monitoring Tren Kinerja Bulanan (Januari – Juli 2026) dari Sheet Monthly {channelLabel}
             </p>
           </div>
 
-          {/* Controls: Period & Sync */}
+          {/* Controls: Channel Toggle & Sync */}
           <div style={{ display: "flex", alignItems: "center", gap: "14px", flexWrap: "wrap" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <span
+            {/* Channel Toggle Switch */}
+            <div
+              style={{
+                display: "flex",
+                background: "var(--bg-card)",
+                padding: "4px",
+                borderRadius: "10px",
+                border: "1px solid var(--border-default)",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setActiveChannel("callCenter")}
                 style={{
-                  fontSize: "11px",
+                  padding: "8px 18px",
+                  fontSize: "12px",
                   fontWeight: 800,
-                  color: "var(--accent-primary)",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.04em",
+                  borderRadius: "7px",
+                  border: "none",
+                  cursor: "pointer",
+                  transition: "all 0.25s ease",
+                  background: isCC
+                    ? "linear-gradient(135deg, #E6002D 0%, #CC0028 100%)"
+                    : "transparent",
+                  color: isCC ? "#fff" : "var(--text-secondary)",
+                  boxShadow: isCC ? "0 2px 10px rgba(230, 0, 45, 0.3)" : "none",
+                  letterSpacing: "0.02em",
                 }}
               >
-                Periode:
-              </span>
-              <select
-                value={selectedPeriod}
-                onChange={(e) => setSelectedPeriod(e.target.value)}
-                className="filter-select"
-                style={{ minWidth: "140px", padding: "6px 12px", fontSize: "12px", fontWeight: 700 }}
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72" />
+                  </svg>
+                  Call Center
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveChannel("eCare")}
+                style={{
+                  padding: "8px 18px",
+                  fontSize: "12px",
+                  fontWeight: 800,
+                  borderRadius: "7px",
+                  border: "none",
+                  cursor: "pointer",
+                  transition: "all 0.25s ease",
+                  background: !isCC
+                    ? "linear-gradient(135deg, #0284c7 0%, #0369a1 100%)"
+                    : "transparent",
+                  color: !isCC ? "#fff" : "var(--text-secondary)",
+                  boxShadow: !isCC ? "0 2px 10px rgba(2, 132, 199, 0.3)" : "none",
+                  letterSpacing: "0.02em",
+                }}
               >
-                <option value="2026-07">July 2026</option>
-                <option value="2026-06">June 2026</option>
-                <option value="2026-05">May 2026</option>
-                <option value="2026-04">April 2026</option>
-                <option value="2026-03">March 2026</option>
-                <option value="2026-02">February 2026</option>
-                <option value="2026-01">January 2026</option>
-              </select>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                    <rect x="2" y="3" width="20" height="14" rx="2" />
+                    <path d="M8 21h8" />
+                    <path d="M12 17v4" />
+                  </svg>
+                  e-Care
+                </span>
+              </button>
             </div>
 
             <button
@@ -550,8 +619,8 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
               disabled={isValidating}
               className="primary-button"
               style={{
-                height: "36px",
-                padding: "0 14px",
+                height: "38px",
+                padding: "0 16px",
                 fontSize: "11px",
                 fontWeight: 800,
                 letterSpacing: "0.03em",
@@ -582,123 +651,98 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-            gap: "18px",
+            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            gap: "16px",
             marginBottom: "28px",
           }}
         >
-          {/* Card 1: Achievement Nasional */}
+          {/* Card 1: Total Achievement */}
           <div
             className="glass-card animate-fade-in-up"
             style={{
               padding: "20px 22px",
-              background: "linear-gradient(135deg, rgba(230, 0, 45, 0.12) 0%, var(--bg-card) 100%)",
-              border: "1px solid rgba(230, 0, 45, 0.3)",
+              background: `linear-gradient(135deg, ${channelColorLight} 0%, var(--bg-card) 100%)`,
+              border: `1px solid ${isCC ? "rgba(230, 0, 45, 0.3)" : "rgba(2, 132, 199, 0.3)"}`,
+              transition: "all 0.3s ease",
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div>
-                <span style={{ fontSize: "11px", fontWeight: 800, color: "var(--accent-primary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                  Achievement Nasional (Juli)
+                <span style={{ fontSize: "10.5px", fontWeight: 800, color: channelColor, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  Total Achievement (Juli)
                 </span>
                 <div style={{ fontSize: "32px", fontWeight: 900, color: "var(--text-primary)", lineHeight: 1.1, marginTop: "6px" }}>
-                  {overallNasionalScore}%
+                  {channelScore}%
                 </div>
               </div>
               <span
                 style={{
                   padding: "4px 8px",
                   borderRadius: "6px",
-                  fontSize: "11px",
+                  fontSize: "10.5px",
                   fontWeight: 800,
-                  background: overallNasionalScore >= 95 ? "rgba(16, 185, 129, 0.2)" : "rgba(245, 158, 11, 0.2)",
-                  color: overallNasionalScore >= 95 ? "#10B981" : "#F59E0B",
+                  background: channelScore >= 95 ? "rgba(16, 185, 129, 0.2)" : "rgba(245, 158, 11, 0.2)",
+                  color: channelScore >= 95 ? "#10B981" : "#F59E0B",
                 }}
               >
-                {overallNasionalScore >= 95 ? "Optimal" : "Monitoring"}
+                {channelScore >= 95 ? "Optimal" : "Monitoring"}
               </span>
             </div>
-            <div style={{ marginTop: "14px", fontSize: "11.5px", color: "var(--text-secondary)" }}>
-              Call Center ({ccScore}%) &amp; e-Care ({ecScore}%)
+            <div style={{ marginTop: "14px", display: "flex", alignItems: "center", gap: "6px" }}>
+              <div style={{ flex: 1, height: "6px", background: "var(--bg-tertiary)", borderRadius: "3px", overflow: "hidden" }}>
+                <div style={{ width: `${Math.min(channelScore, 100)}%`, height: "100%", background: channelGradient, borderRadius: "3px", transition: "width 0.5s ease" }} />
+              </div>
+              <span style={{ fontSize: "10.5px", fontWeight: 700, color: "var(--text-muted)" }}>Tgt 100%</span>
             </div>
           </div>
 
-          {/* Card 2: Call Center */}
+          {/* Card 2: Revenue Category */}
           <div className="glass-card animate-fade-in-up" style={{ padding: "20px 22px", animationDelay: "60ms" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-              <div>
-                <span style={{ fontSize: "11px", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                  Call Center Total
-                </span>
-                <div style={{ fontSize: "30px", fontWeight: 900, color: "var(--text-primary)", lineHeight: 1.1, marginTop: "6px" }}>
-                  {ccScore}%
-                </div>
-              </div>
-              <Link
-                href="/dashboard"
-                style={{
-                  fontSize: "10.5px",
-                  fontWeight: 700,
-                  color: "var(--accent-primary)",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "3px",
-                  textDecoration: "none",
-                }}
-              >
-                Tabel &rarr;
-              </Link>
+            <span style={{ fontSize: "10.5px", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              Revenue
+            </span>
+            <div style={{ fontSize: "28px", fontWeight: 900, color: "var(--text-primary)", lineHeight: 1.1, marginTop: "6px" }}>
+              {revenueSection?.weight?.toFixed(2) ?? "—"}%
             </div>
-            <div style={{ marginTop: "14px", display: "flex", alignItems: "center", gap: "6px" }}>
-              <div style={{ flex: 1, height: "6px", background: "var(--bg-tertiary)", borderRadius: "3px", overflow: "hidden" }}>
-                <div style={{ width: `${Math.min(ccScore, 100)}%`, height: "100%", background: "linear-gradient(90deg, #E6002D, #FF4D6E)", borderRadius: "3px" }} />
-              </div>
-              <span style={{ fontSize: "10.5px", fontWeight: 700, color: "var(--text-muted)" }}>Tgt 100%</span>
+            <div style={{ marginTop: "10px", fontSize: "11px", color: "var(--text-muted)" }}>
+              Target: {revenueSection?.target ?? (isCC ? 20 : 10)}%
             </div>
           </div>
 
-          {/* Card 3: e-Care */}
+          {/* Card 3: CX Category */}
           <div className="glass-card animate-fade-in-up" style={{ padding: "20px 22px", animationDelay: "120ms" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-              <div>
-                <span style={{ fontSize: "11px", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                  e-Care Digital Total
-                </span>
-                <div style={{ fontSize: "30px", fontWeight: 900, color: "var(--text-primary)", lineHeight: 1.1, marginTop: "6px" }}>
-                  {ecScore}%
-                </div>
-              </div>
-              <Link
-                href="/dashboard"
-                style={{
-                  fontSize: "10.5px",
-                  fontWeight: 700,
-                  color: "var(--accent-primary)",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "3px",
-                  textDecoration: "none",
-                }}
-              >
-                Tabel &rarr;
-              </Link>
+            <span style={{ fontSize: "10.5px", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              Customer Experience
+            </span>
+            <div style={{ fontSize: "28px", fontWeight: 900, color: "var(--text-primary)", lineHeight: 1.1, marginTop: "6px" }}>
+              {cxSection?.weight?.toFixed(2) ?? "—"}%
             </div>
-            <div style={{ marginTop: "14px", display: "flex", alignItems: "center", gap: "6px" }}>
-              <div style={{ flex: 1, height: "6px", background: "var(--bg-tertiary)", borderRadius: "3px", overflow: "hidden" }}>
-                <div style={{ width: `${Math.min(ecScore, 100)}%`, height: "100%", background: "linear-gradient(90deg, #0284c7, #38bdf8)", borderRadius: "3px" }} />
-              </div>
-              <span style={{ fontSize: "10.5px", fontWeight: 700, color: "var(--text-muted)" }}>Tgt 100%</span>
+            <div style={{ marginTop: "10px", fontSize: "11px", color: "var(--text-muted)" }}>
+              Target: {cxSection?.target ?? 45}%
             </div>
           </div>
 
-          {/* Card 4: Compliance Status */}
+          {/* Card 4: Internal Process */}
           <div className="glass-card animate-fade-in-up" style={{ padding: "20px 22px", animationDelay: "180ms" }}>
+            <span style={{ fontSize: "10.5px", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              Internal Process
+            </span>
+            <div style={{ fontSize: "28px", fontWeight: 900, color: "var(--text-primary)", lineHeight: 1.1, marginTop: "6px" }}>
+              {ipSection?.weight?.toFixed(2) ?? "—"}%
+            </div>
+            <div style={{ marginTop: "10px", fontSize: "11px", color: "var(--text-muted)" }}>
+              Target: {ipSection?.target ?? (isCC ? 35 : 45)}%
+            </div>
+          </div>
+
+          {/* Card 5: Compliance Status */}
+          <div className="glass-card animate-fade-in-up" style={{ padding: "20px 22px", animationDelay: "240ms" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div>
-                <span style={{ fontSize: "11px", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                  Parameter Target Compliance
+                <span style={{ fontSize: "10.5px", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  Target Compliance
                 </span>
-                <div style={{ fontSize: "30px", fontWeight: 900, color: "#10B981", lineHeight: 1.1, marginTop: "6px" }}>
+                <div style={{ fontSize: "28px", fontWeight: 900, color: "#10B981", lineHeight: 1.1, marginTop: "6px" }}>
                   {complianceRate}%
                 </div>
               </div>
@@ -706,24 +750,24 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
                 style={{
                   padding: "3px 8px",
                   borderRadius: "5px",
-                  fontSize: "10.5px",
+                  fontSize: "10px",
                   fontWeight: 800,
                   background: "rgba(16, 185, 129, 0.15)",
                   color: "#10B981",
                   border: "1px solid rgba(16, 185, 129, 0.3)",
                 }}
               >
-                {passedParams} / {totalParams} Pass
+                {passedParams}/{totalParams}
               </span>
             </div>
-            <div style={{ marginTop: "14px", fontSize: "11px", color: "var(--text-secondary)", display: "flex", gap: "10px" }}>
-              <span style={{ color: "#10B981", fontWeight: 700 }}>&#x2713; {passedParams} Capai Target</span>
-              <span style={{ color: "#EF4444", fontWeight: 700 }}>&#x2717; {missedParams} Perlu Perhatian</span>
+            <div style={{ marginTop: "10px", fontSize: "10.5px", color: "var(--text-secondary)", display: "flex", gap: "8px" }}>
+              <span style={{ color: "#10B981", fontWeight: 700 }}>&#x2713; {passedParams}</span>
+              <span style={{ color: "#EF4444", fontWeight: 700 }}>&#x2717; {missedParams}</span>
             </div>
           </div>
         </div>
 
-        {/* ─── Master Tren Bulanan (Line Chart & Bar Chart) ─── */}
+        {/* ─── Master Tren Bulanan — Single Channel ─── */}
         <div
           className="chart-card animate-fade-in-up"
           style={{ marginBottom: "32px", padding: "24px" }}
@@ -740,10 +784,10 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
           >
             <div>
               <h3 className="chart-card-title" style={{ fontSize: "16px", fontWeight: 800 }}>
-                Tren Capaian Bulanan (Januari – {activeData.selectedPeriod})
+                Tren Total Skor {channelLabel} (Januari – Juli 2026)
               </h3>
               <p className="chart-card-subtitle" style={{ margin: "3px 0 0 0" }}>
-                Grafik performa historis Total Skor Call Center, e-Care, dan Skor Nasional dari Google Sheets
+                Grafik performa historis Achievement Total dari Sheet Monthly {channelLabel}
               </p>
             </div>
 
@@ -789,35 +833,121 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
           <div style={{ width: "100%", height: 320 }}>
             <ResponsiveContainer width="100%" height="100%">
               {masterChartType === "line" ? (
-                <LineChart data={overallTrendsData} margin={{ top: 10, right: 20, bottom: 0, left: -10 }}>
+                <AreaChart data={overallTrendsData} margin={{ top: 10, right: 20, bottom: 0, left: -10 }}>
+                  <defs>
+                    <linearGradient id="channelFill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={channelColor} stopOpacity={0.2} />
+                      <stop offset="95%" stopColor={channelColor} stopOpacity={0.02} />
+                    </linearGradient>
+                  </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} />
                   <XAxis dataKey="month" tick={{ fontSize: 11, fontWeight: 700, fill: "var(--text-muted)" }} axisLine={{ stroke: "var(--border-default)" }} tickLine={false} />
-                  <YAxis domain={[75, 105]} tick={{ fontSize: 11, fill: "var(--text-muted)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} />
+                  <YAxis domain={[70, 110]} tick={{ fontSize: 11, fill: "var(--text-muted)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} />
                   <Tooltip content={<MasterChartTooltip />} />
                   <Legend wrapperStyle={{ fontSize: 11, paddingTop: 10, fontWeight: 600 }} />
                   <ReferenceLine y={100} stroke="#10B981" strokeDasharray="4 4" strokeWidth={1.5} label={{ value: "Target 100%", fill: "#10B981", fontSize: 10, position: "insideTopRight" }} />
-                  <Line type="monotone" dataKey="nasional" name="Achievement Nasional" stroke="#E6002D" strokeWidth={3.5} dot={{ r: 5, fill: "#E6002D", stroke: "#fff", strokeWidth: 2 }} activeDot={{ r: 7 }} connectNulls />
-                  <Line type="monotone" dataKey="callCenter" name="Call Center" stroke="#0284c7" strokeWidth={2.2} strokeDasharray="3 3" dot={{ r: 4, fill: "#0284c7" }} connectNulls />
-                  <Line type="monotone" dataKey="eCare" name="e-Care" stroke="#8b5cf6" strokeWidth={2.2} strokeDasharray="3 3" dot={{ r: 4, fill: "#8b5cf6" }} connectNulls />
-                </LineChart>
+                  <Area type="monotone" dataKey="score" name={`Achievement ${channelLabel}`} stroke={channelColor} strokeWidth={3} fill="url(#channelFill)" dot={{ r: 5, fill: channelColor, stroke: "#fff", strokeWidth: 2 }} activeDot={{ r: 7 }} connectNulls />
+                </AreaChart>
               ) : (
                 <BarChart data={overallTrendsData} margin={{ top: 10, right: 20, bottom: 0, left: -10 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} />
                   <XAxis dataKey="month" tick={{ fontSize: 11, fontWeight: 700, fill: "var(--text-muted)" }} axisLine={{ stroke: "var(--border-default)" }} tickLine={false} />
-                  <YAxis domain={[75, 105]} tick={{ fontSize: 11, fill: "var(--text-muted)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} />
+                  <YAxis domain={[70, 110]} tick={{ fontSize: 11, fill: "var(--text-muted)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} />
                   <Tooltip content={<MasterChartTooltip />} />
                   <Legend wrapperStyle={{ fontSize: 11, paddingTop: 10, fontWeight: 600 }} />
                   <ReferenceLine y={100} stroke="#10B981" strokeDasharray="4 4" strokeWidth={1.5} label={{ value: "Target 100%", fill: "#10B981", fontSize: 10, position: "insideTopRight" }} />
-                  <Bar dataKey="nasional" name="Achievement Nasional" fill="#E6002D" radius={[4, 4, 0, 0]} maxBarSize={28} />
-                  <Bar dataKey="callCenter" name="Call Center" fill="#0284c7" radius={[4, 4, 0, 0]} maxBarSize={28} />
-                  <Bar dataKey="eCare" name="e-Care" fill="#8b5cf6" radius={[4, 4, 0, 0]} maxBarSize={28} />
+                  <Bar dataKey="score" name={`Achievement ${channelLabel}`} radius={[5, 5, 0, 0]} maxBarSize={36}>
+                    {overallTrendsData.map((entry, index) => (
+                      <Cell
+                        key={`master-bar-${index}`}
+                        fill={entry.score !== null && entry.score >= 100 ? "#10B981" : channelColor}
+                        opacity={0.88}
+                      />
+                    ))}
+                  </Bar>
                 </BarChart>
               )}
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* ─── Filter & Control Bar untuk Seluruh Parameter ─── */}
+        {/* ─── Category Trend Charts ─── */}
+        {categoryTrendsForChannel.length > 0 && (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))",
+              gap: "18px",
+              marginBottom: "32px",
+            }}
+          >
+            {categoryTrendsForChannel.map((ct) => (
+              <div key={ct.category} className="chart-card animate-fade-in-up" style={{ padding: "20px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                  <div>
+                    <h4 style={{ fontSize: "14px", fontWeight: 800, color: "var(--text-primary)", margin: 0 }}>
+                      {ct.category}
+                    </h4>
+                    <span style={{ fontSize: "10.5px", color: "var(--text-muted)" }}>
+                      Target: {ct.target}% | Tren Skor Bulanan
+                    </span>
+                  </div>
+                  {/* Latest score badge */}
+                  {(() => {
+                    const latest = ct.history.filter((h) => h.score !== null).pop();
+                    return latest ? (
+                      <span
+                        style={{
+                          padding: "3px 8px",
+                          borderRadius: "5px",
+                          fontSize: "11px",
+                          fontWeight: 800,
+                          background: latest.score! >= ct.target ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)",
+                          color: latest.score! >= ct.target ? "#10B981" : "#EF4444",
+                        }}
+                      >
+                        Jul: {latest.score!.toFixed(2)}%
+                      </span>
+                    ) : null;
+                  })()}
+                </div>
+                <div style={{ width: "100%", height: 180 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={ct.history} margin={{ top: 5, right: 10, bottom: 0, left: -25 }}>
+                      <CartesianGrid strokeDasharray="2 2" stroke="var(--border-subtle)" vertical={false} />
+                      <XAxis dataKey="month" tick={{ fontSize: 10, fontWeight: 700, fill: "var(--text-muted)" }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fontSize: 9.5, fill: "var(--text-muted)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} />
+                      <Tooltip
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        content={({ active, payload, label }: any) => {
+                          if (!active || !payload?.length) return null;
+                          return (
+                            <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: "8px", padding: "8px 10px", fontSize: "11px", boxShadow: "0 6px 20px rgba(0,0,0,0.12)" }}>
+                              <div style={{ fontWeight: 800, marginBottom: "3px" }}>{label} 2026</div>
+                              <div>Score: <strong>{payload[0]?.value !== undefined ? `${Number(payload[0].value).toFixed(2)}%` : "—"}</strong></div>
+                            </div>
+                          );
+                        }}
+                      />
+                      <ReferenceLine y={ct.target} stroke="#F59E0B" strokeDasharray="3 3" strokeWidth={1.2} />
+                      <Bar dataKey="score" name="Score" radius={[4, 4, 0, 0]} maxBarSize={24}>
+                        {ct.history.map((entry, i) => (
+                          <Cell
+                            key={`cat-${i}`}
+                            fill={entry.score !== null && entry.score >= ct.target ? "#10B981" : channelColor}
+                            opacity={0.85}
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ─── Filter & Control Bar ─── */}
         <div
           style={{
             display: "flex",
@@ -834,14 +964,14 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
         >
           <div>
             <h3 style={{ fontSize: "16px", fontWeight: 800, color: "var(--text-primary)", margin: 0 }}>
-              Grafik Tren per Parameter KPI ({filteredParameters.length} Parameter)
+              Grafik Tren per Parameter — {channelLabel} ({filteredParameters.length} Parameter)
             </h3>
             <p style={{ margin: "2px 0 0 0", fontSize: "11.5px", color: "var(--text-secondary)" }}>
-              Visualisasi performa bulanan (Januari – Juli) per parameter dari sheet Monthly Call Center &amp; e-Care
+              Visualisasi performa bulanan (Januari – Juli) per parameter dari Sheet Monthly {channelLabel}
             </p>
           </div>
 
-          {/* Controls: Channel, Category, Status, Search, Chart Toggle */}
+          {/* Controls: Category, Status, Search, Chart Toggle */}
           <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
             {/* Search */}
             <input
@@ -859,18 +989,6 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
                 minWidth: "160px",
               }}
             />
-
-            {/* Channel Filter */}
-            <select
-              value={channelFilter}
-              onChange={(e) => setChannelFilter(e.target.value)}
-              className="filter-select"
-              style={{ fontSize: "11.5px", padding: "6px 10px" }}
-            >
-              <option value="ALL">Semua Channel</option>
-              <option value="Call Center">Call Center</option>
-              <option value="e-Care">e-Care</option>
-            </select>
 
             {/* Category Filter */}
             <select
@@ -974,3 +1092,4 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
     </div>
   );
 }
+
