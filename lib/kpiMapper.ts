@@ -564,10 +564,170 @@ function periodLabel(period: string): string {
   );
 }
 
+const MONTH_COLUMNS = [
+  { key: "Jan", label: "Januari", achCol: 7, targetCol: 8, scoreCol: 9 },
+  { key: "Feb", label: "Februari", achCol: 10, targetCol: 11, scoreCol: 12 },
+  { key: "Mar", label: "Maret", achCol: 13, targetCol: 14, scoreCol: 15 },
+  { key: "Apr", label: "April", achCol: 16, targetCol: 17, scoreCol: 18 },
+  { key: "May", label: "Mei", achCol: 19, targetCol: 20, scoreCol: 21 },
+  { key: "Jun", label: "Juni", achCol: 22, targetCol: 23, scoreCol: 24 },
+  { key: "Jul", label: "Juli", achCol: 26, targetCol: 27, scoreCol: 28 },
+];
+
+function parseNumericValue(val: string | undefined): number | null {
+  if (!val || val === "—" || val === "#DIV/0!" || val === "") return null;
+  const cleaned = val.replace(/,/g, ".").replace(/[^0-9.-]+/g, "");
+  const num = parseFloat(cleaned);
+  return isNaN(num) ? null : num;
+}
+
+function extractParameterHistories(
+  rows: string[][],
+  channel: "Call Center" | "e-Care"
+) {
+  const result = [];
+  let currentCategory = "Revenue";
+
+  for (let r = 2; r < rows.length; r++) {
+    const row = rows[r] || [];
+    const no = clean(row[0]);
+    let paramName = clean(row[1]);
+    const def = clean(row[2]);
+    const target = clean(row[5]);
+    const bobot = clean(row[6]);
+
+    const normParam = normalize(paramName);
+    const normNo = normalize(no);
+
+    if (normParam === "revenue") {
+      currentCategory = "Revenue";
+      continue;
+    }
+    if (normParam === "customerexperience") {
+      currentCategory = "Customer Experience";
+      continue;
+    }
+    if (normParam === "internalprocess") {
+      currentCategory = "Internal Process";
+      continue;
+    }
+    if (normNo === "total" || normParam === "total") {
+      continue;
+    }
+
+    if (!paramName && def) {
+      const normDef = normalize(def);
+      if (normDef.includes("komplainpelangganmobile")) paramName = "FCR Mobile (Komplain)";
+      else if (normDef.includes("komplainreciprocal")) paramName = "FCR Fixed (Reciprocal)";
+      else if (normDef.includes("inslafixed")) paramName = "In SLA Fixed";
+      else if (normDef.includes("closeratetiketmobile")) paramName = "Close rate tiket Mobile";
+      else paramName = def.slice(0, 32);
+    }
+
+    if (!paramName || !target) continue;
+
+    const lowerIsBetter = [
+      "repeat",
+      "rcr",
+      "caps",
+      "respond time",
+      "response time",
+    ].some((k) => paramName.toLowerCase().includes(k));
+
+    const targetNum = parseNumericValue(target);
+
+    const history = MONTH_COLUMNS.map((m) => {
+      const ach = parseNumericValue(row[m.achCol]);
+      const achTarget = parseNumericValue(row[m.targetCol]);
+      const score = parseNumericValue(row[m.scoreCol]);
+      return { month: m.key, ach, achTarget, score };
+    });
+
+    const currentJul = history.find((h) => h.month === "Jul");
+    const currentAch = currentJul?.ach ?? null;
+    const currentScore = clean(row[28]) || "—";
+
+    let isPass = false;
+    if (currentAch !== null && targetNum !== null) {
+      isPass = lowerIsBetter ? currentAch <= targetNum : currentAch >= targetNum;
+    }
+
+    result.push({
+      id: `${channel.replace(/\s+/g, "_")}_${normalize(paramName)}_${r}`,
+      name: paramName,
+      category: currentCategory,
+      channel,
+      target,
+      targetNum,
+      bobot,
+      definisi: def,
+      isLowerBetter: lowerIsBetter,
+      history,
+      currentAch,
+      currentAchStr: clean(row[26]) || "—",
+      currentScore,
+      isPass,
+    });
+  }
+
+  return result;
+}
+
+function extractCategoryAndOverallTrends(
+  ccRows: string[][],
+  ecRows: string[][]
+) {
+  const categories = ["Revenue", "Customer Experience", "Internal Process"];
+  const categoryTrends: any[] = [];
+
+  const getCatScore = (rows: string[][], catName: string, monthCol: number) => {
+    const row = rows.find((r) => normalize(r[1] || "") === normalize(catName));
+    return row ? parseNumericValue(row[monthCol]) : null;
+  };
+
+  const getTotalScore = (rows: string[][], monthCol: number) => {
+    const row = rows.find((r) => normalize(r[0] || "") === "total" || normalize(r[1] || "") === "total");
+    return row ? parseNumericValue(row[monthCol]) : null;
+  };
+
+  categories.forEach((cat) => {
+    const ccTarget = cat === "Revenue" ? 20 : cat === "Customer Experience" ? 45 : 35;
+    const ecTarget = cat === "Revenue" ? 10 : cat === "Customer Experience" ? 45 : 45;
+
+    categoryTrends.push({
+      category: cat,
+      channel: "Call Center",
+      target: ccTarget,
+      history: MONTH_COLUMNS.map((m) => ({ month: m.key, score: getCatScore(ccRows, cat, m.scoreCol) })),
+    });
+
+    categoryTrends.push({
+      category: cat,
+      channel: "e-Care",
+      target: ecTarget,
+      history: MONTH_COLUMNS.map((m) => ({ month: m.key, score: getCatScore(ecRows, cat, m.scoreCol) })),
+    });
+  });
+
+  const overallTrends = MONTH_COLUMNS.map((m) => {
+    const ccScore = getTotalScore(ccRows, m.scoreCol);
+    const ecScore = getTotalScore(ecRows, m.scoreCol);
+    const validScores = [ccScore, ecScore].filter((s): s is number => s !== null && !isNaN(s));
+    const nasional = validScores.length > 0 ? Number((validScores.reduce((a, b) => a + b, 0) / validScores.length).toFixed(2)) : null;
+
+    return {
+      month: m.key,
+      callCenter: ccScore,
+      eCare: ecScore,
+      nasional,
+      target: 100,
+    };
+  });
+
+  return { categoryTrends, overallTrends };
+}
+
 export async function getKpiData(period = DEFAULT_PERIOD): Promise<KpiDashboardData> {
-  // This dashboard is read-only and the spreadsheet is public, so no service
-  // account credentials are required. Keeping this path public also avoids a
-  // malformed private key forcing the dashboard into mock-data fallback.
   const configuredSheetId = process.env.GOOGLE_SHEET_ID?.trim();
   const sheetId = configuredSheetId && !/placeholder|example|xxxx|1AbCDefGh/i.test(configuredSheetId)
     ? configuredSheetId
@@ -588,6 +748,12 @@ export async function getKpiData(period = DEFAULT_PERIOD): Promise<KpiDashboardD
       eCare: parseMonthlyComparison(ecMonthlyRows, period),
     };
 
+    const ccParams = extractParameterHistories(ccMonthlyRows, "Call Center");
+    const ecParams = extractParameterHistories(ecMonthlyRows, "e-Care");
+    const parameterHistories = [...ccParams, ...ecParams];
+
+    const { categoryTrends, overallTrends } = extractCategoryAndOverallTrends(ccMonthlyRows, ecMonthlyRows);
+
     const tabs = TAB_DEFINITIONS.map((definition) => {
       const highlights = freetextHighlightsMap[definition.tabKey];
       const fallback = mockDashboardData.tabs[definition.fallbackIndex];
@@ -597,7 +763,7 @@ export async function getKpiData(period = DEFAULT_PERIOD): Promise<KpiDashboardD
         : (fallback.monthlyComparison ?? []);
       const tabData = parseRekapTab(rekapRows, dailyRows, definition, period, highlights) ?? fallback;
       let totalAchievement = tabData.totalAchievement;
-      if (!totalAchievement && mResult.regionalComparison?.nasionalScore) {
+      if (mResult.regionalComparison?.nasionalScore) {
         const parsedMonthlyScore = parsePercentage(mResult.regionalComparison.nasionalScore, 0);
         if (parsedMonthlyScore > 0) {
           totalAchievement = parsedMonthlyScore;
@@ -659,7 +825,13 @@ export async function getKpiData(period = DEFAULT_PERIOD): Promise<KpiDashboardD
       };
     });
 
-    return { tabs, selectedPeriod: periodLabel(period) };
+    return {
+      tabs,
+      selectedPeriod: periodLabel(period),
+      parameterHistories,
+      categoryTrends,
+      overallTrends,
+    };
   } catch (error) {
     console.error("Error fetching or parsing Google Sheets data:", error);
     return { ...mockDashboardData, selectedPeriod: periodLabel(period) };

@@ -46,6 +46,13 @@ export default function KpiDashboardClient({ dashboardData }: KpiDashboardClient
 
   const currentTabData = activeData.tabs.find((t) => t.tabKey === activeTab) || activeData.tabs[0];
 
+  const parsedNasionalScore = currentTabData?.regionalComparison?.nasionalScore
+    ? parseFloat(currentTabData.regionalComparison.nasionalScore.replace(/,/g, ".").replace(/[^0-9.-]+/g, ""))
+    : null;
+  const gaugeValue = parsedNasionalScore && !isNaN(parsedNasionalScore) && parsedNasionalScore > 0
+    ? parsedNasionalScore
+    : currentTabData.totalAchievement;
+
   const getDaysInMonth = (periodStr: string) => {
     const [year, month] = periodStr.split("-").map(Number);
     return new Date(year, month, 0).getDate();
@@ -120,7 +127,7 @@ export default function KpiDashboardClient({ dashboardData }: KpiDashboardClient
           {/* Achievement Nasional Donut */}
           <div style={{ display: "flex", justifyContent: "center", padding: "6px 0" }}>
             <AchievementGauge
-              value={currentTabData.totalAchievement}
+              value={gaugeValue}
               label="Achievement Nasional"
               size="lg"
             />

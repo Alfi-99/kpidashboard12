@@ -10,7 +10,13 @@ export const mockDashboardData: KpiDashboardData = {
     {
       tabName: "Call Center",
       tabKey: "callCenter",
-      totalAchievement: 95,
+      totalAchievement: 101.00,
+      hasComparison: true,
+      regionalComparison: {
+        nasionalScore: "101.00%",
+        bdgScore: "102.24%",
+        smgScore: "99.20%",
+      },
       sections: [
         {
           name: "Revenue",
@@ -107,7 +113,13 @@ export const mockDashboardData: KpiDashboardData = {
     {
       tabName: "e-Care",
       tabKey: "eCare",
-      totalAchievement: 95,
+      totalAchievement: 93.55,
+      hasComparison: true,
+      regionalComparison: {
+        nasionalScore: "93.55%",
+        bdgScore: "94.81%",
+        smgScore: "91.99%",
+      },
       sections: [
         {
           name: "Revenue",

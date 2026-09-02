@@ -70,9 +70,51 @@ export interface TabData {
   };
 }
 
+export interface ParameterMonthlyPoint {
+  month: string;      // "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"
+  ach: number | null;
+  achTarget?: number | null;
+  score?: number | null;
+}
+
+export interface ParameterHistoryItem {
+  id: string;
+  name: string;
+  category: string;
+  channel: "Call Center" | "e-Care";
+  target: string;
+  targetNum: number | null;
+  bobot: string;
+  definisi?: string;
+  isLowerBetter: boolean;
+  history: ParameterMonthlyPoint[];
+  currentAch: number | null;
+  currentAchStr: string;
+  currentScore: string;
+  isPass: boolean;
+}
+
+export interface CategoryMonthlyTrend {
+  category: string;
+  channel: "Call Center" | "e-Care";
+  target: number;
+  history: { month: string; score: number | null }[];
+}
+
+export interface OverallMonthlyTrend {
+  month: string;
+  callCenter: number | null;
+  eCare: number | null;
+  nasional: number | null;
+  target: number;
+}
+
 export interface KpiDashboardData {
   tabs: TabData[];
   selectedPeriod: string; // e.g. "July 2026"
+  parameterHistories?: ParameterHistoryItem[];
+  categoryTrends?: CategoryMonthlyTrend[];
+  overallTrends?: OverallMonthlyTrend[];
 }
 
 // Keep old KpiData for backward compatibility with existing API

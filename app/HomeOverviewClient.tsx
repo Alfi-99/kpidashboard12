@@ -17,8 +17,15 @@ import {
   Legend,
   ReferenceLine,
   Cell,
+  Area,
+  AreaChart,
 } from "recharts";
-import type { KpiDashboardData } from "@/lib/types";
+import type {
+  KpiDashboardData,
+  ParameterHistoryItem,
+  OverallMonthlyTrend,
+  CategoryMonthlyTrend,
+} from "@/lib/types";
 import TopNav from "@/components/TopNav";
 import { logoutAction } from "@/app/actions/auth";
 
@@ -28,38 +35,19 @@ interface HomeOverviewClientProps {
   initialData: KpiDashboardData;
 }
 
-// Historical trend data (Jan - July 2026) for Call Center, e-Care & Nasional
-const HISTORICAL_MONTHLY_TREND = [
-  { month: "Jan", callCenter: 91.2, eCare: 89.5, nasional: 90.35, target: 100 },
-  { month: "Feb", callCenter: 92.8, eCare: 90.4, nasional: 91.60, target: 100 },
-  { month: "Mar", callCenter: 93.5, eCare: 91.2, nasional: 92.35, target: 100 },
-  { month: "Apr", callCenter: 94.1, eCare: 92.0, nasional: 93.05, target: 100 },
-  { month: "May", callCenter: 94.6, eCare: 92.8, nasional: 93.70, target: 100 },
-  { month: "Jun", callCenter: 94.9, eCare: 93.1, nasional: 94.00, target: 100 },
-  { month: "Jul", callCenter: 95.0, eCare: 93.55, nasional: 94.75, target: 100 },
+// Fallback overall trends if not returned
+const DEFAULT_OVERALL_TRENDS: OverallMonthlyTrend[] = [
+  { month: "Jan", callCenter: 95.27, eCare: 88.65, nasional: 91.96, target: 100 },
+  { month: "Feb", callCenter: 90.30, eCare: 90.44, nasional: 90.37, target: 100 },
+  { month: "Mar", callCenter: 96.15, eCare: 84.60, nasional: 90.38, target: 100 },
+  { month: "Apr", callCenter: 87.19, eCare: 80.72, nasional: 83.96, target: 100 },
+  { month: "May", callCenter: 89.74, eCare: 76.35, nasional: 83.05, target: 100 },
+  { month: "Jun", callCenter: 94.90, eCare: 85.00, nasional: 89.95, target: 100 },
+  { month: "Jul", callCenter: 101.00, eCare: 93.55, nasional: 97.28, target: 100 },
 ];
 
-const isLowerBetterParam = (paramName: string) => {
-  const norm = paramName.toLowerCase();
-  return (
-    norm.includes("repeat") ||
-    norm.includes("rcr") ||
-    norm.includes("caps") ||
-    norm.includes("respond time") ||
-    norm.includes("response time")
-  );
-};
-
-const parseMetricNumber = (valStr?: string): number | null => {
-  if (!valStr || valStr === "—" || valStr === "" || valStr === "0%" || valStr === "0") return null;
-  const clean = valStr.replace(/,/g, ".").replace(/[^0-9.-]+/g, "");
-  const num = parseFloat(clean);
-  return isNaN(num) ? null : num;
-};
-
-// Custom Chart Tooltip
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function CustomChartTooltip({ active, payload, label }: any) {
+function MasterChartTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
     <div
@@ -73,7 +61,7 @@ function CustomChartTooltip({ active, payload, label }: any) {
       }}
     >
       <div style={{ fontWeight: 800, color: "var(--text-primary)", marginBottom: "6px" }}>
-        {label}
+        Bulan: {label} 2026
       </div>
       {payload.map((entry: { name: string; value: number | string; color: string }, i: number) => (
         <div
@@ -81,21 +69,24 @@ function CustomChartTooltip({ active, payload, label }: any) {
           style={{
             display: "flex",
             alignItems: "center",
-            gap: "8px",
+            justifyContent: "space-between",
+            gap: "12px",
             margin: "3px 0",
             color: "var(--text-secondary)",
           }}
         >
-          <span
-            style={{
-              width: 8,
-              height: 8,
-              borderRadius: "50%",
-              background: entry.color,
-              display: "inline-block",
-            }}
-          />
-          <span style={{ fontWeight: 600 }}>{entry.name}:</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <span
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                background: entry.color,
+                display: "inline-block",
+              }}
+            />
+            <span style={{ fontWeight: 600 }}>{entry.name}:</span>
+          </div>
           <strong style={{ color: "var(--text-primary)" }}>
             {typeof entry.value === "number" ? `${entry.value.toFixed(2)}%` : entry.value}
           </strong>
@@ -105,12 +96,297 @@ function CustomChartTooltip({ active, payload, label }: any) {
   );
 }
 
+// Parameter Item Mini Chart Card
+function ParameterChartCard({
+  param,
+  chartMode,
+}: {
+  param: ParameterHistoryItem;
+  chartMode: "line" | "bar";
+}) {
+  const chartData = param.history.map((h) => ({
+    month: h.month,
+    ach: h.ach,
+    achTarget: h.achTarget,
+    score: h.score,
+  }));
+
+  const validValues = param.history.filter((h) => h.ach !== null).map((h) => h.ach as number);
+  const minVal = validValues.length > 0 ? Math.min(...validValues) : 0;
+  const maxVal = validValues.length > 0 ? Math.max(...validValues) : 100;
+  const targetNum = param.targetNum ?? 100;
+
+  const yDomainMin = Math.max(0, Math.floor(Math.min(minVal, targetNum) * 0.85));
+  const yDomainMax = Math.ceil(Math.max(maxVal, targetNum) * 1.15);
+
+  const isChannelCC = param.channel === "Call Center";
+
+  return (
+    <div
+      className="chart-card animate-fade-in-up"
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        padding: "18px 20px",
+        borderRadius: "14px",
+        border: "1px solid var(--border-default)",
+        background: "var(--bg-card)",
+        transition: "all 0.2s ease",
+      }}
+    >
+      {/* Card Header */}
+      <div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "10px", marginBottom: "8px" }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap", marginBottom: "4px" }}>
+              <span
+                style={{
+                  fontSize: "9.5px",
+                  fontWeight: 800,
+                  padding: "2px 7px",
+                  borderRadius: "4px",
+                  background: isChannelCC ? "rgba(230, 0, 45, 0.12)" : "rgba(2, 132, 199, 0.12)",
+                  color: isChannelCC ? "#E6002D" : "#0284c7",
+                  border: `1px solid ${isChannelCC ? "rgba(230, 0, 45, 0.25)" : "rgba(2, 132, 199, 0.25)"}`,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.03em",
+                }}
+              >
+                {param.channel}
+              </span>
+
+              <span
+                style={{
+                  fontSize: "9.5px",
+                  fontWeight: 700,
+                  padding: "2px 6px",
+                  borderRadius: "4px",
+                  background: "var(--bg-tertiary)",
+                  color: "var(--text-secondary)",
+                }}
+              >
+                {param.category}
+              </span>
+            </div>
+
+            <h4
+              style={{
+                fontSize: "13.5px",
+                fontWeight: 800,
+                color: "var(--text-primary)",
+                margin: 0,
+                lineHeight: 1.3,
+                wordBreak: "break-word",
+              }}
+              title={param.name}
+            >
+              {param.name}
+            </h4>
+          </div>
+
+          {/* Current Month (July) Status Badge */}
+          <div style={{ textAlign: "right", flexShrink: 0 }}>
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                padding: "3px 8px",
+                borderRadius: "6px",
+                fontSize: "11px",
+                fontWeight: 800,
+                background: param.isPass ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)",
+                color: param.isPass ? "#10B981" : "#EF4444",
+                border: `1px solid ${param.isPass ? "rgba(16, 185, 129, 0.3)" : "rgba(239, 68, 68, 0.3)"}`,
+                whiteSpace: "nowrap",
+              }}
+            >
+              Jul: {param.currentAchStr}
+            </span>
+          </div>
+        </div>
+
+        {/* Target and Bobot Information */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            fontSize: "11px",
+            color: "var(--text-secondary)",
+            background: "var(--bg-tertiary)",
+            padding: "5px 10px",
+            borderRadius: "6px",
+            marginBottom: "12px",
+          }}
+        >
+          <span>
+            Target: <strong style={{ color: "var(--text-primary)" }}>{param.target}</strong>
+          </span>
+          <span>
+            Bobot: <strong style={{ color: "var(--text-primary)" }}>{param.bobot}</strong>
+          </span>
+          <span>
+            Score: <strong style={{ color: "var(--accent-primary)" }}>{param.currentScore}</strong>
+          </span>
+        </div>
+      </div>
+
+      {/* Chart: Line or Bar (Jan - Jul) */}
+      <div style={{ width: "100%", height: 160, margin: "4px 0" }}>
+        <ResponsiveContainer width="100%" height="100%">
+          {chartMode === "line" ? (
+            <LineChart data={chartData} margin={{ top: 10, right: 10, bottom: 0, left: -25 }}>
+              <CartesianGrid strokeDasharray="2 2" stroke="var(--border-subtle)" vertical={false} />
+              <XAxis dataKey="month" tick={{ fontSize: 9.5, fontWeight: 700, fill: "var(--text-muted)" }} axisLine={{ stroke: "var(--border-default)" }} tickLine={false} />
+              <YAxis domain={[yDomainMin, yDomainMax]} tick={{ fontSize: 9.5, fill: "var(--text-muted)" }} axisLine={false} tickLine={false} />
+              <Tooltip
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                content={({ active, payload, label }: any) => {
+                  if (!active || !payload?.length) return null;
+                  const item = payload[0].payload;
+                  return (
+                    <div
+                      style={{
+                        background: "var(--bg-card)",
+                        border: "1px solid var(--border-default)",
+                        borderRadius: "8px",
+                        padding: "8px 10px",
+                        fontSize: "11px",
+                        boxShadow: "0 6px 20px rgba(0,0,0,0.12)",
+                      }}
+                    >
+                      <div style={{ fontWeight: 800, color: "var(--text-primary)", marginBottom: "4px" }}>
+                        {label} 2026
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", gap: "10px" }}>
+                        <span>Realisasi:</span>
+                        <strong style={{ color: "var(--accent-primary)" }}>
+                          {item.ach !== null ? `${item.ach}${param.target.includes("%") ? "%" : ""}` : "—"}
+                        </strong>
+                      </div>
+                      {item.score !== null && (
+                        <div style={{ display: "flex", justifyContent: "space-between", gap: "10px" }}>
+                          <span>Score:</span>
+                          <strong>{item.score}%</strong>
+                        </div>
+                      )}
+                    </div>
+                  );
+                }}
+              />
+              {param.targetNum !== null && (
+                <ReferenceLine
+                  y={param.targetNum}
+                  stroke="#F59E0B"
+                  strokeDasharray="3 3"
+                  strokeWidth={1.5}
+                  label={{ value: `Tgt ${param.target}`, fill: "#F59E0B", fontSize: 8.5, position: "insideTopRight" }}
+                />
+              )}
+              <Line
+                type="monotone"
+                dataKey="ach"
+                name="Realisasi"
+                stroke={isChannelCC ? "#E6002D" : "#0284c7"}
+                strokeWidth={2.4}
+                connectNulls
+                dot={{ r: 3.5, fill: isChannelCC ? "#E6002D" : "#0284c7", stroke: "#fff", strokeWidth: 1.5 }}
+                activeDot={{ r: 5 }}
+              />
+            </LineChart>
+          ) : (
+            <BarChart data={chartData} margin={{ top: 10, right: 10, bottom: 0, left: -25 }}>
+              <CartesianGrid strokeDasharray="2 2" stroke="var(--border-subtle)" vertical={false} />
+              <XAxis dataKey="month" tick={{ fontSize: 9.5, fontWeight: 700, fill: "var(--text-muted)" }} axisLine={{ stroke: "var(--border-default)" }} tickLine={false} />
+              <YAxis domain={[yDomainMin, yDomainMax]} tick={{ fontSize: 9.5, fill: "var(--text-muted)" }} axisLine={false} tickLine={false} />
+              <Tooltip
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                content={({ active, payload, label }: any) => {
+                  if (!active || !payload?.length) return null;
+                  const item = payload[0].payload;
+                  return (
+                    <div
+                      style={{
+                        background: "var(--bg-card)",
+                        border: "1px solid var(--border-default)",
+                        borderRadius: "8px",
+                        padding: "8px 10px",
+                        fontSize: "11px",
+                        boxShadow: "0 6px 20px rgba(0,0,0,0.12)",
+                      }}
+                    >
+                      <div style={{ fontWeight: 800, color: "var(--text-primary)", marginBottom: "4px" }}>
+                        {label} 2026
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", gap: "10px" }}>
+                        <span>Realisasi:</span>
+                        <strong style={{ color: "var(--accent-primary)" }}>
+                          {item.ach !== null ? `${item.ach}${param.target.includes("%") ? "%" : ""}` : "—"}
+                        </strong>
+                      </div>
+                    </div>
+                  );
+                }}
+              />
+              {param.targetNum !== null && (
+                <ReferenceLine
+                  y={param.targetNum}
+                  stroke="#F59E0B"
+                  strokeDasharray="3 3"
+                  strokeWidth={1.5}
+                />
+              )}
+              <Bar dataKey="ach" name="Realisasi" radius={[3, 3, 0, 0]} maxBarSize={20}>
+                {chartData.map((entry, index) => {
+                  let isMet = false;
+                  if (entry.ach !== null && param.targetNum !== null) {
+                    isMet = param.isLowerBetter ? entry.ach <= param.targetNum : entry.ach >= param.targetNum;
+                  }
+                  return (
+                    <Cell
+                      key={`bar-${index}`}
+                      fill={isMet ? "var(--color-success, #10B981)" : "var(--color-danger, #EF4444)"}
+                      opacity={0.85}
+                    />
+                  );
+                })}
+              </Bar>
+            </BarChart>
+          )}
+        </ResponsiveContainer>
+      </div>
+
+      {/* Footer Definition Preview */}
+      {param.definisi && (
+        <div
+          style={{
+            fontSize: "10px",
+            color: "var(--text-muted)",
+            marginTop: "6px",
+            lineHeight: 1.4,
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}
+          title={param.definisi}
+        >
+          {param.definisi}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function HomeOverviewClient({ initialData }: HomeOverviewClientProps) {
   const [selectedPeriod, setSelectedPeriod] = useState("2026-07");
   const [isDark, setIsDark] = useState(false);
-  const [trendChartType, setTrendChartType] = useState<"line" | "bar">("line");
-  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>("ALL");
-  const [selectedChannelFilter, setSelectedChannelFilter] = useState<string>("ALL");
+  const [masterChartType, setMasterChartType] = useState<"line" | "bar">("line");
+  const [paramChartMode, setParamChartMode] = useState<"line" | "bar">("line");
+  const [channelFilter, setChannelFilter] = useState<string>("ALL");
+  const [categoryFilter, setCategoryFilter] = useState<string>("ALL");
+  const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [searchQuery, setSearchQuery] = useState<string>("");
 
   const { data: liveData, isValidating, mutate } = useSWR<KpiDashboardData>(
     `/api/kpi?period=${selectedPeriod}`,
@@ -132,107 +408,57 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
     logoutAction();
   };
 
-  // Find Call Center and eCare tabs
+  // Extract score for Call Center and e-Care
   const ccTab = activeData.tabs.find((t) => t.tabKey === "callCenter") || activeData.tabs[0];
   const ecTab = activeData.tabs.find((t) => t.tabKey === "eCare") || activeData.tabs[1];
 
-  const ccScore = ccTab?.totalAchievement || 95.0;
-  const ecScore = ecTab?.totalAchievement || 93.55;
+  const getScore = (tab: typeof ccTab) => {
+    if (!tab) return 100;
+    const parsed = tab.regionalComparison?.nasionalScore
+      ? parseFloat(tab.regionalComparison.nasionalScore.replace(/,/g, ".").replace(/[^0-9.-]+/g, ""))
+      : null;
+    return parsed && !isNaN(parsed) && parsed > 0 ? parsed : tab.totalAchievement;
+  };
+
+  const ccScore = getScore(ccTab);
+  const ecScore = getScore(ecTab);
   const overallNasionalScore = Number(((ccScore + ecScore) / 2).toFixed(2));
 
-  // Compute category breakdown data
-  const categoryComparisonData = useMemo(() => {
-    const categories = ["Revenue", "Customer Experience", "Internal Process"];
-    return categories.map((catName) => {
-      const ccSec = ccTab?.sections.find((s) => s.name.toLowerCase().includes(catName.toLowerCase()));
-      const ecSec = ecTab?.sections.find((s) => s.name.toLowerCase().includes(catName.toLowerCase()));
+  // Overall monthly trend data
+  const overallTrendsData = activeData.overallTrends && activeData.overallTrends.length > 0
+    ? activeData.overallTrends
+    : DEFAULT_OVERALL_TRENDS;
 
-      return {
-        category: catName === "Customer Experience" ? "CX" : catName,
-        fullName: catName,
-        ccTarget: ccSec?.target || (catName === "Revenue" ? 20 : catName === "Customer Experience" ? 45 : 35),
-        ccActual: ccSec?.weight || 0,
-        ecTarget: ecSec?.target || (catName === "Revenue" ? 10 : catName === "Customer Experience" ? 45 : 45),
-        ecActual: ecSec?.weight || 0,
-      };
-    });
-  }, [ccTab, ecTab]);
+  // Parameter histories
+  const parameterHistories = activeData.parameterHistories || [];
 
-  // Extract all parameters for visualization
-  const parameterList = useMemo(() => {
-    const list: Array<{
-      id: string;
-      channel: string;
-      category: string;
-      name: string;
-      targetStr: string;
-      targetNum: number;
-      actualStr: string;
-      actualNum: number;
-      achTargetPct: number;
-      isPass: boolean;
-      isLowerBetter: boolean;
-    }> = [];
-
-    const processTab = (tab: typeof ccTab, channelLabel: string) => {
-      if (!tab) return;
-      tab.sections.forEach((sec) => {
-        sec.parameters.forEach((param, pIdx) => {
-          const targetNum = parseMetricNumber(param.target);
-          const actualNum = parseMetricNumber(param.mtdAchievement);
-          if (targetNum === null || actualNum === null) return;
-
-          const isLowerBetter = isLowerBetterParam(param.name);
-          const isPass = isLowerBetter ? actualNum <= targetNum : actualNum >= targetNum;
-          const achTargetPct = isLowerBetter
-            ? actualNum === 0 ? 100 : Math.round((targetNum / actualNum) * 100)
-            : Math.round((actualNum / targetNum) * 100);
-
-          list.push({
-            id: `${channelLabel}-${sec.name}-${param.name}-${pIdx}`,
-            channel: channelLabel,
-            category: sec.name,
-            name: param.name,
-            targetStr: param.target,
-            targetNum,
-            actualStr: param.mtdAchievement || "—",
-            actualNum,
-            achTargetPct,
-            isPass,
-            isLowerBetter,
-          });
-        });
-      });
-    };
-
-    processTab(ccTab, "Call Center");
-    processTab(ecTab, "e-Care");
-
-    return list;
-  }, [ccTab, ecTab]);
-
-  // Filtered parameters for display
+  // Filtered parameter histories
   const filteredParameters = useMemo(() => {
-    return parameterList.filter((p) => {
-      if (selectedChannelFilter !== "ALL" && p.channel !== selectedChannelFilter) return false;
-      if (selectedCategoryFilter !== "ALL" && !p.category.toLowerCase().includes(selectedCategoryFilter.toLowerCase())) return false;
+    return parameterHistories.filter((p) => {
+      if (channelFilter !== "ALL" && p.channel !== channelFilter) return false;
+      if (categoryFilter !== "ALL" && !p.category.toLowerCase().includes(categoryFilter.toLowerCase())) return false;
+      if (statusFilter === "PASS" && !p.isPass) return false;
+      if (statusFilter === "MISS" && p.isPass) return false;
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        return p.name.toLowerCase().includes(q) || (p.definisi && p.definisi.toLowerCase().includes(q));
+      }
       return true;
     });
-  }, [parameterList, selectedChannelFilter, selectedCategoryFilter]);
+  }, [parameterHistories, channelFilter, categoryFilter, statusFilter, searchQuery]);
 
-  // Parameter stats
-  const totalParams = parameterList.length;
-  const passedParams = parameterList.filter((p) => p.isPass).length;
+  const totalParams = parameterHistories.length;
+  const passedParams = parameterHistories.filter((p) => p.isPass).length;
   const missedParams = totalParams - passedParams;
   const complianceRate = totalParams > 0 ? Math.round((passedParams / totalParams) * 100) : 0;
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg-primary)" }}>
-      {/* Navigation */}
+      {/* Top Navigation */}
       <TopNav isDark={isDark} onToggleTheme={() => setIsDark(!isDark)} onLogout={handleLogout} />
 
-      <main style={{ maxWidth: "1400px", margin: "0 auto", padding: "28px 24px 60px 24px" }}>
-        {/* Hero & Executive Title */}
+      <main style={{ maxWidth: "1440px", margin: "0 auto", padding: "28px 24px 80px 24px" }}>
+        {/* ─── Hero & Executive Header ─── */}
         <div
           className="animate-fade-in-up"
           style={{
@@ -256,16 +482,18 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
                   display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  width: "28px",
-                  height: "28px",
+                  width: "32px",
+                  height: "32px",
                   borderRadius: "8px",
                   background: "linear-gradient(135deg, #E6002D 0%, #99001A 100%)",
-                  boxShadow: "0 2px 8px rgba(230, 0, 45, 0.35)",
+                  boxShadow: "0 2px 10px rgba(230, 0, 45, 0.35)",
                 }}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2">
-                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                  <polyline points="9 22 9 12 15 12 15 22" />
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4">
+                  <path d="M3 3v18h18" />
+                  <path d="M18 17V9" />
+                  <path d="M13 17V5" />
+                  <path d="M8 17v-3" />
                 </svg>
               </span>
               <h1
@@ -278,11 +506,11 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
                   letterSpacing: "-0.02em",
                 }}
               >
-                Overview KPI Dashboard
+                Overview Semua KPI &amp; Parameter
               </h1>
             </div>
             <p style={{ margin: 0, fontSize: "13px", color: "var(--text-secondary)", fontWeight: 500 }}>
-              Monitoring Agregat Kinerja Nasional, Tren Historis, dan Status Capaian Parameter Operasional
+              Monitoring Komprehensif Tren Kinerja Bulanan (Januari – {activeData.selectedPeriod}) dari Sheet Monthly Call Center &amp; e-Care
             </p>
           </div>
 
@@ -366,14 +594,12 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
               padding: "20px 22px",
               background: "linear-gradient(135deg, rgba(230, 0, 45, 0.12) 0%, var(--bg-card) 100%)",
               border: "1px solid rgba(230, 0, 45, 0.3)",
-              position: "relative",
-              overflow: "hidden",
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div>
                 <span style={{ fontSize: "11px", fontWeight: 800, color: "var(--accent-primary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                  Achievement Nasional
+                  Achievement Nasional (Juli)
                 </span>
                 <div style={{ fontSize: "32px", fontWeight: 900, color: "var(--text-primary)", lineHeight: 1.1, marginTop: "6px" }}>
                   {overallNasionalScore}%
@@ -393,7 +619,7 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
               </span>
             </div>
             <div style={{ marginTop: "14px", fontSize: "11.5px", color: "var(--text-secondary)" }}>
-              Agregat Call Center ({ccScore}%) &amp; e-Care ({ecScore}%)
+              Call Center ({ccScore}%) &amp; e-Care ({ecScore}%)
             </div>
           </div>
 
@@ -402,7 +628,7 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div>
                 <span style={{ fontSize: "11px", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                  Call Center
+                  Call Center Total
                 </span>
                 <div style={{ fontSize: "30px", fontWeight: 900, color: "var(--text-primary)", lineHeight: 1.1, marginTop: "6px" }}>
                   {ccScore}%
@@ -420,7 +646,7 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
                   textDecoration: "none",
                 }}
               >
-                Detail &rarr;
+                Tabel &rarr;
               </Link>
             </div>
             <div style={{ marginTop: "14px", display: "flex", alignItems: "center", gap: "6px" }}>
@@ -436,7 +662,7 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div>
                 <span style={{ fontSize: "11px", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                  e-Care (Digital)
+                  e-Care Digital Total
                 </span>
                 <div style={{ fontSize: "30px", fontWeight: 900, color: "var(--text-primary)", lineHeight: 1.1, marginTop: "6px" }}>
                   {ecScore}%
@@ -454,7 +680,7 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
                   textDecoration: "none",
                 }}
               >
-                Detail &rarr;
+                Tabel &rarr;
               </Link>
             </div>
             <div style={{ marginTop: "14px", display: "flex", alignItems: "center", gap: "6px" }}>
@@ -470,7 +696,7 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div>
                 <span style={{ fontSize: "11px", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                  Target Compliance
+                  Parameter Target Compliance
                 </span>
                 <div style={{ fontSize: "30px", fontWeight: 900, color: "#10B981", lineHeight: 1.1, marginTop: "6px" }}>
                   {complianceRate}%
@@ -497,10 +723,10 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
           </div>
         </div>
 
-        {/* ─── Main Trend Chart Section ─── */}
+        {/* ─── Master Tren Bulanan (Line Chart & Bar Chart) ─── */}
         <div
           className="chart-card animate-fade-in-up"
-          style={{ marginBottom: "28px", padding: "24px" }}
+          style={{ marginBottom: "32px", padding: "24px" }}
         >
           <div
             style={{
@@ -517,15 +743,15 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
                 Tren Capaian Bulanan (Januari – {activeData.selectedPeriod})
               </h3>
               <p className="chart-card-subtitle" style={{ margin: "3px 0 0 0" }}>
-                Perbandingan Achievement Call Center, e-Care, dan Skor Nasional terhadap Target RKAP
+                Grafik performa historis Total Skor Call Center, e-Care, dan Skor Nasional dari Google Sheets
               </p>
             </div>
 
-            {/* Toggle Line / Bar */}
+            {/* Toggle Line / Bar Chart */}
             <div style={{ display: "flex", background: "var(--bg-tertiary)", padding: "3px", borderRadius: "8px", border: "1px solid var(--border-subtle)" }}>
               <button
                 type="button"
-                onClick={() => setTrendChartType("line")}
+                onClick={() => setMasterChartType("line")}
                 style={{
                   padding: "5px 12px",
                   fontSize: "11px",
@@ -533,16 +759,16 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
                   borderRadius: "6px",
                   border: "none",
                   cursor: "pointer",
-                  background: trendChartType === "line" ? "var(--bg-card)" : "transparent",
-                  color: trendChartType === "line" ? "var(--accent-primary)" : "var(--text-secondary)",
-                  boxShadow: trendChartType === "line" ? "0 2px 6px rgba(0,0,0,0.1)" : "none",
+                  background: masterChartType === "line" ? "var(--bg-card)" : "transparent",
+                  color: masterChartType === "line" ? "var(--accent-primary)" : "var(--text-secondary)",
+                  boxShadow: masterChartType === "line" ? "0 2px 6px rgba(0,0,0,0.1)" : "none",
                 }}
               >
                 Line Chart
               </button>
               <button
                 type="button"
-                onClick={() => setTrendChartType("bar")}
+                onClick={() => setMasterChartType("bar")}
                 style={{
                   padding: "5px 12px",
                   fontSize: "11px",
@@ -550,36 +776,36 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
                   borderRadius: "6px",
                   border: "none",
                   cursor: "pointer",
-                  background: trendChartType === "bar" ? "var(--bg-card)" : "transparent",
-                  color: trendChartType === "bar" ? "var(--accent-primary)" : "var(--text-secondary)",
-                  boxShadow: trendChartType === "bar" ? "0 2px 6px rgba(0,0,0,0.1)" : "none",
+                  background: masterChartType === "bar" ? "var(--bg-card)" : "transparent",
+                  color: masterChartType === "bar" ? "var(--accent-primary)" : "var(--text-secondary)",
+                  boxShadow: masterChartType === "bar" ? "0 2px 6px rgba(0,0,0,0.1)" : "none",
                 }}
               >
-                Bar Chart
+                Diagram Batang
               </button>
             </div>
           </div>
 
           <div style={{ width: "100%", height: 320 }}>
             <ResponsiveContainer width="100%" height="100%">
-              {trendChartType === "line" ? (
-                <LineChart data={HISTORICAL_MONTHLY_TREND} margin={{ top: 10, right: 20, bottom: 0, left: -10 }}>
+              {masterChartType === "line" ? (
+                <LineChart data={overallTrendsData} margin={{ top: 10, right: 20, bottom: 0, left: -10 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} />
                   <XAxis dataKey="month" tick={{ fontSize: 11, fontWeight: 700, fill: "var(--text-muted)" }} axisLine={{ stroke: "var(--border-default)" }} tickLine={false} />
-                  <YAxis domain={[80, 105]} tick={{ fontSize: 11, fill: "var(--text-muted)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} />
-                  <Tooltip content={<CustomChartTooltip />} />
+                  <YAxis domain={[75, 105]} tick={{ fontSize: 11, fill: "var(--text-muted)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} />
+                  <Tooltip content={<MasterChartTooltip />} />
                   <Legend wrapperStyle={{ fontSize: 11, paddingTop: 10, fontWeight: 600 }} />
                   <ReferenceLine y={100} stroke="#10B981" strokeDasharray="4 4" strokeWidth={1.5} label={{ value: "Target 100%", fill: "#10B981", fontSize: 10, position: "insideTopRight" }} />
-                  <Line type="monotone" dataKey="nasional" name="Achievement Nasional" stroke="#E6002D" strokeWidth={3.5} dot={{ r: 5, fill: "#E6002D", stroke: "#fff", strokeWidth: 2 }} activeDot={{ r: 7 }} />
-                  <Line type="monotone" dataKey="callCenter" name="Call Center" stroke="#0284c7" strokeWidth={2.2} strokeDasharray="3 3" dot={{ r: 4, fill: "#0284c7" }} />
-                  <Line type="monotone" dataKey="eCare" name="e-Care" stroke="#8b5cf6" strokeWidth={2.2} strokeDasharray="3 3" dot={{ r: 4, fill: "#8b5cf6" }} />
+                  <Line type="monotone" dataKey="nasional" name="Achievement Nasional" stroke="#E6002D" strokeWidth={3.5} dot={{ r: 5, fill: "#E6002D", stroke: "#fff", strokeWidth: 2 }} activeDot={{ r: 7 }} connectNulls />
+                  <Line type="monotone" dataKey="callCenter" name="Call Center" stroke="#0284c7" strokeWidth={2.2} strokeDasharray="3 3" dot={{ r: 4, fill: "#0284c7" }} connectNulls />
+                  <Line type="monotone" dataKey="eCare" name="e-Care" stroke="#8b5cf6" strokeWidth={2.2} strokeDasharray="3 3" dot={{ r: 4, fill: "#8b5cf6" }} connectNulls />
                 </LineChart>
               ) : (
-                <BarChart data={HISTORICAL_MONTHLY_TREND} margin={{ top: 10, right: 20, bottom: 0, left: -10 }}>
+                <BarChart data={overallTrendsData} margin={{ top: 10, right: 20, bottom: 0, left: -10 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} />
                   <XAxis dataKey="month" tick={{ fontSize: 11, fontWeight: 700, fill: "var(--text-muted)" }} axisLine={{ stroke: "var(--border-default)" }} tickLine={false} />
-                  <YAxis domain={[80, 105]} tick={{ fontSize: 11, fill: "var(--text-muted)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} />
-                  <Tooltip content={<CustomChartTooltip />} />
+                  <YAxis domain={[75, 105]} tick={{ fontSize: 11, fill: "var(--text-muted)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} />
+                  <Tooltip content={<MasterChartTooltip />} />
                   <Legend wrapperStyle={{ fontSize: 11, paddingTop: 10, fontWeight: 600 }} />
                   <ReferenceLine y={100} stroke="#10B981" strokeDasharray="4 4" strokeWidth={1.5} label={{ value: "Target 100%", fill: "#10B981", fontSize: 10, position: "insideTopRight" }} />
                   <Bar dataKey="nasional" name="Achievement Nasional" fill="#E6002D" radius={[4, 4, 0, 0]} maxBarSize={28} />
@@ -591,256 +817,159 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
           </div>
         </div>
 
-        {/* ─── Grid: Category Breakdown & Quick Navigation ─── */}
+        {/* ─── Filter & Control Bar untuk Seluruh Parameter ─── */}
         <div
           style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(420px, 1fr))",
-            gap: "24px",
-            marginBottom: "28px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "16px",
+            marginBottom: "20px",
+            padding: "16px 20px",
+            background: "var(--bg-card)",
+            borderRadius: "12px",
+            border: "1px solid var(--border-default)",
           }}
         >
-          {/* Category Breakdown Chart */}
-          <div className="chart-card animate-fade-in-up" style={{ padding: "22px" }}>
-            <div style={{ marginBottom: "16px" }}>
-              <h3 className="chart-card-title" style={{ fontSize: "15px", fontWeight: 800 }}>
-                Capaian per Kategori (Revenue, CX, Internal Process)
-              </h3>
-              <p className="chart-card-subtitle" style={{ margin: "2px 0 0 0" }}>
-                Target Bobot vs Realisasi Capaian Nasional ({activeData.selectedPeriod})
-              </p>
-            </div>
-
-            <div style={{ width: "100%", height: 260 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={categoryComparisonData} margin={{ top: 10, right: 10, bottom: 0, left: -15 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} />
-                  <XAxis dataKey="category" tick={{ fontSize: 11, fontWeight: 700, fill: "var(--text-muted)" }} axisLine={{ stroke: "var(--border-default)" }} tickLine={false} />
-                  <YAxis tick={{ fontSize: 11, fill: "var(--text-muted)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} />
-                  <Tooltip content={<CustomChartTooltip />} />
-                  <Legend wrapperStyle={{ fontSize: 11, paddingTop: 6 }} />
-                  <Bar dataKey="ccActual" name="Call Center Realisasi" fill="#E6002D" radius={[4, 4, 0, 0]} maxBarSize={24} />
-                  <Bar dataKey="ccTarget" name="Call Center Target" fill="rgba(230, 0, 45, 0.3)" radius={[4, 4, 0, 0]} maxBarSize={24} />
-                  <Bar dataKey="ecActual" name="e-Care Realisasi" fill="#0284c7" radius={[4, 4, 0, 0]} maxBarSize={24} />
-                  <Bar dataKey="ecTarget" name="e-Care Target" fill="rgba(2, 132, 199, 0.3)" radius={[4, 4, 0, 0]} maxBarSize={24} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+          <div>
+            <h3 style={{ fontSize: "16px", fontWeight: 800, color: "var(--text-primary)", margin: 0 }}>
+              Grafik Tren per Parameter KPI ({filteredParameters.length} Parameter)
+            </h3>
+            <p style={{ margin: "2px 0 0 0", fontSize: "11.5px", color: "var(--text-secondary)" }}>
+              Visualisasi performa bulanan (Januari – Juli) per parameter dari sheet Monthly Call Center &amp; e-Care
+            </p>
           </div>
 
-          {/* Quick Shortcuts & Summary Highlights */}
-          <div className="chart-card animate-fade-in-up" style={{ padding: "22px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-            <div>
-              <h3 className="chart-card-title" style={{ fontSize: "15px", fontWeight: 800 }}>
-                Highlight &amp; Akses Cepat Dashboard
-              </h3>
-              <p className="chart-card-subtitle" style={{ margin: "2px 0 16px 0" }}>
-                Pintasan ke halaman analisis detail tabel dan scorecard
-              </p>
+          {/* Controls: Channel, Category, Status, Search, Chart Toggle */}
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+            {/* Search */}
+            <input
+              type="text"
+              placeholder="Cari parameter..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                padding: "6px 12px",
+                fontSize: "11.5px",
+                borderRadius: "6px",
+                border: "1px solid var(--border-default)",
+                background: "var(--bg-tertiary)",
+                color: "var(--text-primary)",
+                minWidth: "160px",
+              }}
+            />
 
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                <Link
-                  href="/dashboard"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "12px 16px",
-                    borderRadius: "10px",
-                    background: "var(--bg-tertiary)",
-                    border: "1px solid var(--border-subtle)",
-                    textDecoration: "none",
-                    color: "var(--text-primary)",
-                    transition: "all 0.15s ease",
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                    <span style={{ padding: "6px 10px", borderRadius: "6px", background: "#E6002D", color: "#fff", fontWeight: 800, fontSize: "11px" }}>
-                      KPI
-                    </span>
-                    <div>
-                      <div style={{ fontSize: "13px", fontWeight: 700 }}>Detail Dashboard KPI (Tabel &amp; Harian)</div>
-                      <div style={{ fontSize: "11px", color: "var(--text-secondary)" }}>Monitoring harian day 1-31 dan komparasi bulanan</div>
-                    </div>
-                  </div>
-                  <span style={{ fontSize: "16px", color: "var(--accent-primary)" }}>&rarr;</span>
-                </Link>
+            {/* Channel Filter */}
+            <select
+              value={channelFilter}
+              onChange={(e) => setChannelFilter(e.target.value)}
+              className="filter-select"
+              style={{ fontSize: "11.5px", padding: "6px 10px" }}
+            >
+              <option value="ALL">Semua Channel</option>
+              <option value="Call Center">Call Center</option>
+              <option value="e-Care">e-Care</option>
+            </select>
 
-                <Link
-                  href="/scorecard"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "12px 16px",
-                    borderRadius: "10px",
-                    background: "var(--bg-tertiary)",
-                    border: "1px solid var(--border-subtle)",
-                    textDecoration: "none",
-                    color: "var(--text-primary)",
-                    transition: "all 0.15s ease",
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                    <span style={{ padding: "6px 10px", borderRadius: "6px", background: "#0284c7", color: "#fff", fontWeight: 800, fontSize: "11px" }}>
-                      SC
-                    </span>
-                    <div>
-                      <div style={{ fontSize: "13px", fontWeight: 700 }}>ScoreCard Contact Center</div>
-                      <div style={{ fontSize: "11px", color: "var(--text-secondary)" }}>Grafik metrik spesifik Contact Center 12 bulan</div>
-                    </div>
-                  </div>
-                  <span style={{ fontSize: "16px", color: "var(--accent-primary)" }}>&rarr;</span>
-                </Link>
-              </div>
-            </div>
+            {/* Category Filter */}
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="filter-select"
+              style={{ fontSize: "11.5px", padding: "6px 10px" }}
+            >
+              <option value="ALL">Semua Kategori</option>
+              <option value="Revenue">Revenue</option>
+              <option value="Customer Experience">Customer Experience</option>
+              <option value="Internal Process">Internal Process</option>
+            </select>
 
-            {/* Quick summary notes */}
-            <div style={{ marginTop: "16px", padding: "12px 14px", borderRadius: "8px", background: "rgba(16, 185, 129, 0.08)", border: "1px solid rgba(16, 185, 129, 0.2)" }}>
-              <div style={{ fontSize: "11.5px", fontWeight: 700, color: "#10B981", marginBottom: "4px" }}>
-                Status Kinerja Keseluruhan:
-              </div>
-              <div style={{ fontSize: "11px", color: "var(--text-secondary)", lineHeight: 1.5 }}>
-                {ccTab?.summaryHighlight?.[0] || "Pencapaian KPI Call Center dan e-Care stabil memenuhi standar kualitas layanan."}
-              </div>
+            {/* Status Filter */}
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="filter-select"
+              style={{ fontSize: "11.5px", padding: "6px 10px" }}
+            >
+              <option value="ALL">Semua Status</option>
+              <option value="PASS">Target Tercapai</option>
+              <option value="MISS">Belum Tercapai</option>
+            </select>
+
+            {/* Chart Mode Toggle */}
+            <div style={{ display: "flex", background: "var(--bg-tertiary)", padding: "2px", borderRadius: "6px", border: "1px solid var(--border-subtle)" }}>
+              <button
+                type="button"
+                onClick={() => setParamChartMode("line")}
+                title="Tampilan Line Chart"
+                style={{
+                  padding: "4px 10px",
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  borderRadius: "5px",
+                  border: "none",
+                  cursor: "pointer",
+                  background: paramChartMode === "line" ? "var(--bg-card)" : "transparent",
+                  color: paramChartMode === "line" ? "var(--accent-primary)" : "var(--text-secondary)",
+                  boxShadow: paramChartMode === "line" ? "0 1px 4px rgba(0,0,0,0.1)" : "none",
+                }}
+              >
+                Line
+              </button>
+              <button
+                type="button"
+                onClick={() => setParamChartMode("bar")}
+                title="Tampilan Diagram Batang"
+                style={{
+                  padding: "4px 10px",
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  borderRadius: "5px",
+                  border: "none",
+                  cursor: "pointer",
+                  background: paramChartMode === "bar" ? "var(--bg-card)" : "transparent",
+                  color: paramChartMode === "bar" ? "var(--accent-primary)" : "var(--text-secondary)",
+                  boxShadow: paramChartMode === "bar" ? "0 1px 4px rgba(0,0,0,0.1)" : "none",
+                }}
+              >
+                Bar
+              </button>
             </div>
           </div>
         </div>
 
-        {/* ─── Parameter Achievement Visualizer Chart ─── */}
-        <div className="chart-card animate-fade-in-up" style={{ padding: "24px" }}>
+        {/* ─── Grid Kartu Parameter KPI ─── */}
+        {filteredParameters.length > 0 ? (
           <div
             style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: "14px",
-              marginBottom: "20px",
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+              gap: "18px",
             }}
           >
-            <div>
-              <h3 className="chart-card-title" style={{ fontSize: "16px", fontWeight: 800 }}>
-                Visualisasi Capaian Parameter KPI
-              </h3>
-              <p className="chart-card-subtitle" style={{ margin: "2px 0 0 0" }}>
-                Indeks persentase pencapaian terhadap target (100% = Memenuhi Target). Warna hijau menandakan tercapai, merah menandakan di bawah target.
-              </p>
-            </div>
-
-            {/* Filters for Parameters */}
-            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-              {/* Channel Filter */}
-              <select
-                value={selectedChannelFilter}
-                onChange={(e) => setSelectedChannelFilter(e.target.value)}
-                className="filter-select"
-                style={{ fontSize: "11.5px", padding: "5px 10px" }}
-              >
-                <option value="ALL">Semua Channel</option>
-                <option value="Call Center">Call Center</option>
-                <option value="e-Care">e-Care</option>
-              </select>
-
-              {/* Category Filter */}
-              <select
-                value={selectedCategoryFilter}
-                onChange={(e) => setSelectedCategoryFilter(e.target.value)}
-                className="filter-select"
-                style={{ fontSize: "11.5px", padding: "5px 10px" }}
-              >
-                <option value="ALL">Semua Kategori</option>
-                <option value="Revenue">Revenue</option>
-                <option value="Customer Experience">Customer Experience</option>
-                <option value="Internal Process">Internal Process</option>
-              </select>
-            </div>
+            {filteredParameters.map((param) => (
+              <ParameterChartCard
+                key={param.id}
+                param={param}
+                chartMode={paramChartMode}
+              />
+            ))}
           </div>
-
-          {/* Horizontal Bar Chart for Parameters */}
-          <div style={{ width: "100%", height: Math.max(340, filteredParameters.length * 36) }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                layout="vertical"
-                data={filteredParameters}
-                margin={{ top: 10, right: 30, bottom: 10, left: 140 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" horizontal={false} />
-                <XAxis
-                  type="number"
-                  domain={[0, (dataMax: number) => Math.max(120, Math.ceil(dataMax / 10) * 10)]}
-                  tick={{ fontSize: 10, fill: "var(--text-muted)" }}
-                  axisLine={{ stroke: "var(--border-default)" }}
-                  tickFormatter={(v) => `${v}%`}
-                />
-                <YAxis
-                  type="category"
-                  dataKey="name"
-                  tick={{ fontSize: 11, fontWeight: 600, fill: "var(--text-primary)" }}
-                  axisLine={false}
-                  tickLine={false}
-                  width={140}
-                />
-                <Tooltip
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  content={({ active, payload }: any) => {
-                    if (!active || !payload?.length) return null;
-                    const item = payload[0].payload;
-                    return (
-                      <div
-                        style={{
-                          background: "var(--bg-card)",
-                          border: "1px solid var(--border-default)",
-                          borderRadius: "10px",
-                          padding: "10px 14px",
-                          boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
-                          fontSize: "12px",
-                        }}
-                      >
-                        <div style={{ fontWeight: 800, color: "var(--text-primary)", marginBottom: "4px" }}>
-                          {item.name} ({item.channel})
-                        </div>
-                        <div style={{ color: "var(--text-secondary)", fontSize: "11px", marginBottom: "6px" }}>
-                          Kategori: {item.category}
-                        </div>
-                        <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", margin: "2px 0" }}>
-                          <span>Target:</span>
-                          <strong>{item.targetStr}</strong>
-                        </div>
-                        <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", margin: "2px 0" }}>
-                          <span>Realisasi MTD:</span>
-                          <strong>{item.actualStr}</strong>
-                        </div>
-                        <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", margin: "2px 0" }}>
-                          <span>Indeks Capaian:</span>
-                          <strong style={{ color: item.isPass ? "#10B981" : "#EF4444" }}>
-                            {item.achTargetPct}% ({item.isPass ? "Tercapai" : "Belum Tercapai"})
-                          </strong>
-                        </div>
-                      </div>
-                    );
-                  }}
-                />
-                <ReferenceLine
-                  x={100}
-                  stroke="#10B981"
-                  strokeWidth={2}
-                  strokeDasharray="4 4"
-                  label={{ value: "Target (100%)", fill: "#10B981", fontSize: 10, position: "top" }}
-                />
-                <Bar dataKey="achTargetPct" name="% Capaian Target" radius={[0, 4, 4, 0]} maxBarSize={20}>
-                  {filteredParameters.map((entry) => (
-                    <Cell
-                      key={entry.id}
-                      fill={entry.isPass ? "var(--color-success, #10B981)" : "var(--color-danger, #EF4444)"}
-                      opacity={0.88}
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+        ) : (
+          <div
+            style={{
+              padding: "40px",
+              textAlign: "center",
+              background: "var(--bg-card)",
+              borderRadius: "12px",
+              border: "1px solid var(--border-default)",
+              color: "var(--text-secondary)",
+            }}
+          >
+            Tidak ada parameter yang sesuai dengan filter yang dipilih.
           </div>
-        </div>
+        )}
       </main>
     </div>
   );

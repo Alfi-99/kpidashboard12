@@ -104,7 +104,9 @@ export default function AchievementGauge({
               textShadow: "0 2px 10px rgba(0, 0, 0, 0.4)",
             }}
           >
-            {animatedValue}
+            {typeof animatedValue === "number" && !Number.isInteger(animatedValue)
+              ? animatedValue.toFixed(2)
+              : animatedValue}
             <span className={dimensions.suffixSize} style={{ color: "#FF8CA3" }}>{suffix || "%"}</span>
           </span>
         </div>
