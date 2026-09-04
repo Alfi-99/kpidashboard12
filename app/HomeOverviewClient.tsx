@@ -19,6 +19,7 @@ import {
   Cell,
   Area,
   AreaChart,
+  LabelList,
 } from "recharts";
 import type {
   KpiDashboardData,
@@ -236,7 +237,7 @@ function ParameterChartCard({
       <div style={{ width: "100%", height: 160, margin: "4px 0" }}>
         <ResponsiveContainer width="100%" height="100%">
           {chartMode === "line" ? (
-            <LineChart data={chartData} margin={{ top: 10, right: 10, bottom: 0, left: -25 }}>
+            <LineChart data={chartData} margin={{ top: 18, right: 10, bottom: 0, left: -25 }}>
               <CartesianGrid strokeDasharray="2 2" stroke="var(--border-subtle)" vertical={false} />
               <XAxis dataKey="month" tick={{ fontSize: 9.5, fontWeight: 700, fill: "var(--text-muted)" }} axisLine={{ stroke: "var(--border-default)" }} tickLine={false} />
               <YAxis domain={[yDomainMin, yDomainMax]} tick={{ fontSize: 9.5, fill: "var(--text-muted)" }} axisLine={false} tickLine={false} />
@@ -293,10 +294,18 @@ function ParameterChartCard({
                 connectNulls
                 dot={{ r: 3.5, fill: isChannelCC ? "#E6002D" : "#0284c7", stroke: "#fff", strokeWidth: 1.5 }}
                 activeDot={{ r: 5 }}
-              />
+              >
+                <LabelList
+                  dataKey="ach"
+                  position="top"
+                  offset={8}
+                  style={{ fontSize: 8, fontWeight: 700, fill: "var(--text-secondary)" }}
+                  formatter={(v: any) => v !== null && v !== undefined ? `${v}` : ""}
+                />
+              </Line>
             </LineChart>
           ) : (
-            <BarChart data={chartData} margin={{ top: 10, right: 10, bottom: 0, left: -25 }}>
+            <BarChart data={chartData} margin={{ top: 18, right: 10, bottom: 0, left: -25 }}>
               <CartesianGrid strokeDasharray="2 2" stroke="var(--border-subtle)" vertical={false} />
               <XAxis dataKey="month" tick={{ fontSize: 9.5, fontWeight: 700, fill: "var(--text-muted)" }} axisLine={{ stroke: "var(--border-default)" }} tickLine={false} />
               <YAxis domain={[yDomainMin, yDomainMax]} tick={{ fontSize: 9.5, fill: "var(--text-muted)" }} axisLine={false} tickLine={false} />
@@ -351,6 +360,13 @@ function ParameterChartCard({
                     />
                   );
                 })}
+                <LabelList
+                  dataKey="ach"
+                  position="top"
+                  offset={4}
+                  style={{ fontSize: 7.5, fontWeight: 700, fill: "var(--text-secondary)" }}
+                  formatter={(v: any) => v !== null && v !== undefined ? `${v}` : ""}
+                />
               </Bar>
             </BarChart>
           )}
@@ -833,7 +849,7 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
           <div style={{ width: "100%", height: 320 }}>
             <ResponsiveContainer width="100%" height="100%">
               {masterChartType === "line" ? (
-                <AreaChart data={overallTrendsData} margin={{ top: 10, right: 20, bottom: 0, left: -10 }}>
+                <AreaChart data={overallTrendsData} margin={{ top: 22, right: 20, bottom: 0, left: -10 }}>
                   <defs>
                     <linearGradient id="channelFill" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor={channelColor} stopOpacity={0.2} />
@@ -846,10 +862,18 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
                   <Tooltip content={<MasterChartTooltip />} />
                   <Legend wrapperStyle={{ fontSize: 11, paddingTop: 10, fontWeight: 600 }} />
                   <ReferenceLine y={100} stroke="#10B981" strokeDasharray="4 4" strokeWidth={1.5} label={{ value: "Target 100%", fill: "#10B981", fontSize: 10, position: "insideTopRight" }} />
-                  <Area type="monotone" dataKey="score" name={`Achievement ${channelLabel}`} stroke={channelColor} strokeWidth={3} fill="url(#channelFill)" dot={{ r: 5, fill: channelColor, stroke: "#fff", strokeWidth: 2 }} activeDot={{ r: 7 }} connectNulls />
+                  <Area type="monotone" dataKey="score" name={`Achievement ${channelLabel}`} stroke={channelColor} strokeWidth={3} fill="url(#channelFill)" dot={{ r: 5, fill: channelColor, stroke: "#fff", strokeWidth: 2 }} activeDot={{ r: 7 }} connectNulls>
+                    <LabelList
+                      dataKey="score"
+                      position="top"
+                      offset={10}
+                      style={{ fontSize: 10.5, fontWeight: 800, fill: "var(--text-primary)" }}
+                      formatter={(v: any) => v !== null && v !== undefined ? `${Number(v).toFixed(1)}%` : ""}
+                    />
+                  </Area>
                 </AreaChart>
               ) : (
-                <BarChart data={overallTrendsData} margin={{ top: 10, right: 20, bottom: 0, left: -10 }}>
+                <BarChart data={overallTrendsData} margin={{ top: 22, right: 20, bottom: 0, left: -10 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} />
                   <XAxis dataKey="month" tick={{ fontSize: 11, fontWeight: 700, fill: "var(--text-muted)" }} axisLine={{ stroke: "var(--border-default)" }} tickLine={false} />
                   <YAxis domain={[70, 110]} tick={{ fontSize: 11, fill: "var(--text-muted)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} />
@@ -864,6 +888,13 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
                         opacity={0.88}
                       />
                     ))}
+                    <LabelList
+                      dataKey="score"
+                      position="top"
+                      offset={6}
+                      style={{ fontSize: 10.5, fontWeight: 800, fill: "var(--text-primary)" }}
+                      formatter={(v: any) => v !== null && v !== undefined ? `${Number(v).toFixed(1)}%` : ""}
+                    />
                   </Bar>
                 </BarChart>
               )}
@@ -913,7 +944,7 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
                 </div>
                 <div style={{ width: "100%", height: 180 }}>
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={ct.history} margin={{ top: 5, right: 10, bottom: 0, left: -25 }}>
+                    <BarChart data={ct.history} margin={{ top: 18, right: 10, bottom: 0, left: -25 }}>
                       <CartesianGrid strokeDasharray="2 2" stroke="var(--border-subtle)" vertical={false} />
                       <XAxis dataKey="month" tick={{ fontSize: 10, fontWeight: 700, fill: "var(--text-muted)" }} axisLine={false} tickLine={false} />
                       <YAxis tick={{ fontSize: 9.5, fill: "var(--text-muted)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} />
@@ -938,6 +969,13 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
                             opacity={0.85}
                           />
                         ))}
+                        <LabelList
+                          dataKey="score"
+                          position="top"
+                          offset={4}
+                          style={{ fontSize: 8.5, fontWeight: 700, fill: "var(--text-primary)" }}
+                          formatter={(v: any) => v !== null && v !== undefined ? `${Number(v).toFixed(1)}%` : ""}
+                        />
                       </Bar>
                     </BarChart>
                   </ResponsiveContainer>
