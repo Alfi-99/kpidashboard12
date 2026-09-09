@@ -415,6 +415,8 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
       fallbackData: initialData,
       refreshInterval: 10000,
       keepPreviousData: true,
+      revalidateOnMount: true,
+      revalidateOnFocus: true,
     }
   );
 
@@ -691,7 +693,7 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div>
                 <span style={{ fontSize: "10.5px", fontWeight: 800, color: channelColor, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                  Total Achievement ({latestMonthIndo})
+                  Total Achievement MTD ({latestMonthIndo})
                 </span>
                 <div style={{ fontSize: "32px", fontWeight: 900, color: "var(--text-primary)", lineHeight: 1.1, marginTop: "6px" }}>
                   {channelScore}%
@@ -721,7 +723,7 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
           {/* Card 2: Revenue Category */}
           <div className="glass-card animate-fade-in-up" style={{ padding: "20px 22px", animationDelay: "60ms" }}>
             <span style={{ fontSize: "10.5px", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-              Revenue
+              Revenue (MTD)
             </span>
             <div style={{ fontSize: "28px", fontWeight: 900, color: "var(--text-primary)", lineHeight: 1.1, marginTop: "6px" }}>
               {revenueSection?.weight?.toFixed(2) ?? "—"}%
@@ -734,7 +736,7 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
           {/* Card 3: CX Category */}
           <div className="glass-card animate-fade-in-up" style={{ padding: "20px 22px", animationDelay: "120ms" }}>
             <span style={{ fontSize: "10.5px", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-              Customer Experience
+              Customer Experience (MTD)
             </span>
             <div style={{ fontSize: "28px", fontWeight: 900, color: "var(--text-primary)", lineHeight: 1.1, marginTop: "6px" }}>
               {cxSection?.weight?.toFixed(2) ?? "—"}%
@@ -747,7 +749,7 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
           {/* Card 4: Internal Process */}
           <div className="glass-card animate-fade-in-up" style={{ padding: "20px 22px", animationDelay: "180ms" }}>
             <span style={{ fontSize: "10.5px", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-              Internal Process
+              Internal Process (MTD)
             </span>
             <div style={{ fontSize: "28px", fontWeight: 900, color: "var(--text-primary)", lineHeight: 1.1, marginTop: "6px" }}>
               {ipSection?.weight?.toFixed(2) ?? "—"}%
@@ -762,7 +764,7 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div>
                 <span style={{ fontSize: "10.5px", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                  Target Compliance
+                  Target Compliance ({latestMonthIndo})
                 </span>
                 <div style={{ fontSize: "28px", fontWeight: 900, color: "#10B981", lineHeight: 1.1, marginTop: "6px" }}>
                   {complianceRate}%
