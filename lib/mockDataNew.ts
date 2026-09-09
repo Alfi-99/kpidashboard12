@@ -5,7 +5,7 @@
 import type { KpiDashboardData } from "./types";
 
 export const mockDashboardData: KpiDashboardData = {
-  selectedPeriod: "July 2026",
+  selectedPeriod: "August 2026",
   tabs: [
     {
       tabName: "Call Center",

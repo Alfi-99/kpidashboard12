@@ -21,7 +21,7 @@ interface KpiDashboardClientProps {
 
 export default function KpiDashboardClient({ dashboardData }: KpiDashboardClientProps) {
   const [activeTab, setActiveTab] = useState(dashboardData.tabs[0]?.tabKey || "callCenter");
-  const [selectedPeriod, setSelectedPeriod] = useState("2026-07");
+  const [selectedPeriod, setSelectedPeriod] = useState("2026-08");
   const [isDark, setIsDark] = useState(false);
   const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
 
@@ -182,6 +182,7 @@ export default function KpiDashboardClient({ dashboardData }: KpiDashboardClient
                 className="filter-select"
                 style={{ minWidth: "150px" }}
               >
+                <option value="2026-08">August 2026</option>
                 <option value="2026-07">July 2026</option>
                 <option value="2026-06">June 2026</option>
                 <option value="2026-05">May 2026</option>

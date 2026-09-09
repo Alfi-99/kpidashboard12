@@ -45,6 +45,7 @@ const DEFAULT_OVERALL_TRENDS: OverallMonthlyTrend[] = [
   { month: "May", callCenter: 89.74, eCare: 76.35, nasional: 83.05, target: 100 },
   { month: "Jun", callCenter: 94.90, eCare: 85.00, nasional: 89.95, target: 100 },
   { month: "Jul", callCenter: 101.00, eCare: 93.55, nasional: 97.28, target: 100 },
+  { month: "Aug", callCenter: 110.17, eCare: 107.33, nasional: 108.75, target: 100 },
 ];
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -202,7 +203,11 @@ function ParameterChartCard({
                 whiteSpace: "nowrap",
               }}
             >
-              Jul: {param.currentAchStr}
+              {(() => {
+                const latestHistory = param.history && param.history.length > 0 ? param.history[param.history.length - 1] : null;
+                const mLabel = latestHistory?.month || "Aug";
+                return `${mLabel}: ${param.currentAchStr}`;
+              })()}
             </span>
           </div>
         </div>
@@ -404,7 +409,7 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
   const [searchQuery, setSearchQuery] = useState<string>("");
 
   const { data: liveData, isValidating, mutate } = useSWR<KpiDashboardData>(
-    `/api/kpi?period=2026-07`,
+    `/api/kpi?period=2026-08`,
     fetcher,
     {
       fallbackData: initialData,
@@ -495,6 +500,7 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
   const passedParams = parameterHistories.filter((p) => p.isPass).length;
   const missedParams = totalParams - passedParams;
   const complianceRate = totalParams > 0 ? Math.round((passedParams / totalParams) * 100) : 0;
+  const latestMonthIndo = activeData.selectedPeriod?.toLowerCase().includes("aug") ? "Agustus" : (activeData.selectedPeriod?.toLowerCase().includes("jul") ? "Juli" : (activeData.selectedPeriod || "Agustus"));
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg-primary)" }}>
@@ -556,7 +562,7 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
               </h1>
             </div>
             <p style={{ margin: 0, fontSize: "13px", color: "var(--text-secondary)", fontWeight: 500 }}>
-              Monitoring Tren Kinerja Bulanan (Januari – Juli 2026) dari Sheet Monthly {channelLabel}
+              Monitoring Tren Kinerja Bulanan (Januari – {latestMonthIndo} 2026) dari Sheet Monthly {channelLabel}
             </p>
           </div>
 
@@ -685,7 +691,7 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div>
                 <span style={{ fontSize: "10.5px", fontWeight: 800, color: channelColor, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                  Total Achievement (Juli)
+                  Total Achievement ({latestMonthIndo})
                 </span>
                 <div style={{ fontSize: "32px", fontWeight: 900, color: "var(--text-primary)", lineHeight: 1.1, marginTop: "6px" }}>
                   {channelScore}%
@@ -800,7 +806,7 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
           >
             <div>
               <h3 className="chart-card-title" style={{ fontSize: "16px", fontWeight: 800 }}>
-                Tren Total Skor {channelLabel} (Januari – Juli 2026)
+                Tren Total Skor {channelLabel} (Januari – {latestMonthIndo} 2026)
               </h3>
               <p className="chart-card-subtitle" style={{ margin: "3px 0 0 0" }}>
                 Grafik performa historis Achievement Total dari Sheet Monthly {channelLabel}
@@ -937,7 +943,7 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
                           color: latest.score! >= ct.target ? "#10B981" : "#EF4444",
                         }}
                       >
-                        Jul: {latest.score!.toFixed(2)}%
+                        {latest.month}: {latest.score!.toFixed(2)}%
                       </span>
                     ) : null;
                   })()}
@@ -1005,7 +1011,7 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
               Grafik Tren per Parameter — {channelLabel} ({filteredParameters.length} Parameter)
             </h3>
             <p style={{ margin: "2px 0 0 0", fontSize: "11.5px", color: "var(--text-secondary)" }}>
-              Visualisasi performa bulanan (Januari – Juli) per parameter dari Sheet Monthly {channelLabel}
+              Visualisasi performa bulanan (Januari – {latestMonthIndo}) per parameter dari Sheet Monthly {channelLabel}
             </p>
           </div>
 

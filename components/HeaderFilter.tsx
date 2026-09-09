@@ -17,7 +17,7 @@ export default function HeaderFilter({
   tabs,
   onPeriodChange,
 }: HeaderFilterProps) {
-  const [selectedPeriod, setSelectedPeriod] = useState("2026-07");
+  const [selectedPeriod, setSelectedPeriod] = useState("2026-08");
 
   const handlePeriodChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedPeriod(e.target.value);
@@ -39,10 +39,14 @@ export default function HeaderFilter({
             onChange={handlePeriodChange}
             className="period-dropdown"
           >
+            <option value="2026-08">August 2026</option>
             <option value="2026-07">July 2026</option>
             <option value="2026-06">June 2026</option>
             <option value="2026-05">May 2026</option>
             <option value="2026-04">April 2026</option>
+            <option value="2026-03">March 2026</option>
+            <option value="2026-02">February 2026</option>
+            <option value="2026-01">January 2026</option>
           </select>
           <svg
             className="period-dropdown-icon"

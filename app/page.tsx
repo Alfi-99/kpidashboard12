@@ -9,7 +9,7 @@ export const revalidate = 0;
 export default async function HomePage() {
   let initialData = mockDashboardData;
   try {
-    initialData = await getKpiData("2026-07");
+    initialData = await getKpiData("2026-08");
   } catch (error) {
     console.error("Failed to load initial KPI data on Home page:", error);
   }
