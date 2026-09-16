@@ -430,6 +430,8 @@ function parseMonthlyComparison(rows: string[][], period: string): MonthlyParseR
       ? 2
       : 1;
 
+  let currentCategoryParamNo = 0;
+
   for (let r = startRow; r < rows.length; r++) {
     const row = rows[r] || [];
     const no = clean(row[0]);
@@ -500,6 +502,7 @@ function parseMonthlyComparison(rows: string[][], period: string): MonthlyParseR
       !target;
 
     if (isCategory) {
+      currentCategoryParamNo = 0;
       result.push({
         no,
         parameter: param,
@@ -518,10 +521,8 @@ function parseMonthlyComparison(rows: string[][], period: string): MonthlyParseR
       continue;
     }
 
-    // Sub-row without parameter title
-    let isSubRow = false;
+    // Determine parameter name if missing in column
     if (!param && def) {
-      isSubRow = true;
       const normDef = normalize(def);
       if (normDef.includes("komplainpelangganmobile") || normDef.includes("komplainmobile")) {
         param = "FCR Mobile Komplain";
@@ -552,8 +553,9 @@ function parseMonthlyComparison(rows: string[][], period: string): MonthlyParseR
     }
 
     if (param || def || target || bobot || nasionalScore || bdgScore || smgScore) {
+      currentCategoryParamNo++;
       result.push({
-        no,
+        no: String(currentCategoryParamNo),
         parameter: param,
         definisi: def,
         target,
@@ -565,7 +567,7 @@ function parseMonthlyComparison(rows: string[][], period: string): MonthlyParseR
         bdgScore: hasBdgSmg ? bdgScore : "",
         smgAch: hasBdgSmg ? smgAch : "",
         smgScore: hasBdgSmg ? smgScore : "",
-        isSubRow,
+        isSubRow: false,
       });
     }
   }
