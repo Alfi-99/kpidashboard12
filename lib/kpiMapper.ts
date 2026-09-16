@@ -522,17 +522,33 @@ function parseMonthlyComparison(rows: string[][], period: string): MonthlyParseR
     let isSubRow = false;
     if (!param && def) {
       isSubRow = true;
-      if (normDef.includes("komplainpelangganmobile")) {
-        param = "FCR Mobile (Komplain)";
-      } else if (normDef.includes("komplainreciprocal")) {
-        param = "FCR Fixed (Reciprocal)";
+      const normDef = normalize(def);
+      if (normDef.includes("komplainpelangganmobile") || normDef.includes("komplainmobile")) {
+        param = "FCR Mobile Komplain";
+      } else if (normDef.includes("komplainreciprocal") || normDef.includes("reciprocal")) {
+        param = "FCR Fixed Komplain Reciprocal";
       } else if (normDef.includes("inslafixed")) {
-        param = "In SLA Fixed";
+        param = "Quality of Ticket : In SLA Fixed";
       } else if (normDef.includes("closeratetiketmobile")) {
         param = "Close rate tiket Mobile";
       } else {
         param = def.slice(0, 30);
       }
+    }
+
+    const normParamCheck = normalize(param);
+    if (normParamCheck === "fcrmobile" || normParamCheck === "fcrmobilepermintaan") {
+      param = "FCR Mobile Permintaan";
+    } else if (normParamCheck === "fcrmobilekomplain") {
+      param = "FCR Mobile Komplain";
+    } else if (normParamCheck === "fcrfixed" || normParamCheck === "fcrfixedkomplain") {
+      param = "FCR Fixed Komplain";
+    } else if (normParamCheck === "fcrfixedreciprocal" || normParamCheck === "fcrfixedkomplainreciprocal") {
+      param = "FCR Fixed Komplain Reciprocal";
+    } else if (normParamCheck === "qualityofticket" || normParamCheck === "inslamobile") {
+      param = "Quality of Ticket : In SLA Mobile";
+    } else if (normParamCheck === "inslafixed") {
+      param = "Quality of Ticket : In SLA Fixed";
     }
 
     if (param || def || target || bobot || nasionalScore || bdgScore || smgScore) {
@@ -619,11 +635,26 @@ function extractParameterHistories(
 
     if (!paramName && def) {
       const normDef = normalize(def);
-      if (normDef.includes("komplainpelangganmobile")) paramName = "FCR Mobile (Komplain)";
-      else if (normDef.includes("komplainreciprocal")) paramName = "FCR Fixed (Reciprocal)";
-      else if (normDef.includes("inslafixed")) paramName = "In SLA Fixed";
+      if (normDef.includes("komplainpelangganmobile") || normDef.includes("komplainmobile")) paramName = "FCR Mobile Komplain";
+      else if (normDef.includes("komplainreciprocal") || normDef.includes("reciprocal")) paramName = "FCR Fixed Komplain Reciprocal";
+      else if (normDef.includes("inslafixed")) paramName = "Quality of Ticket : In SLA Fixed";
       else if (normDef.includes("closeratetiketmobile")) paramName = "Close rate tiket Mobile";
       else paramName = def.slice(0, 32);
+    }
+
+    const normParamName = normalize(paramName);
+    if (normParamName === "fcrmobile" || normParamName === "fcrmobilepermintaan") {
+      paramName = "FCR Mobile Permintaan";
+    } else if (normParamName === "fcrmobilekomplain") {
+      paramName = "FCR Mobile Komplain";
+    } else if (normParamName === "fcrfixed" || normParamName === "fcrfixedkomplain") {
+      paramName = "FCR Fixed Komplain";
+    } else if (normParamName === "fcrfixedreciprocal" || normParamName === "fcrfixedkomplainreciprocal") {
+      paramName = "FCR Fixed Komplain Reciprocal";
+    } else if (normParamName === "qualityofticket" || normParamName === "inslamobile") {
+      paramName = "Quality of Ticket : In SLA Mobile";
+    } else if (normParamName === "inslafixed") {
+      paramName = "Quality of Ticket : In SLA Fixed";
     }
 
     if (!paramName || !target) continue;
