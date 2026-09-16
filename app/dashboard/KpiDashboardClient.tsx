@@ -5,7 +5,6 @@ import { useState, useEffect } from "react";
 import useSWR from "swr";
 import type { KpiDashboardData } from "@/lib/types";
 import AchievementGauge from "@/components/AchievementGauge";
-import KpiSectionTable from "@/components/KpiSectionTable";
 import MonthlyComparisonTable from "@/components/MonthlyComparisonTable";
 import RegionalComparisonWidget from "@/components/RegionalComparisonWidget";
 import SummaryHighlight from "@/components/SummaryHighlight";
@@ -21,7 +20,7 @@ interface KpiDashboardClientProps {
 
 export default function KpiDashboardClient({ dashboardData }: KpiDashboardClientProps) {
   const [activeTab, setActiveTab] = useState(dashboardData.tabs[0]?.tabKey || "callCenter");
-  const [selectedPeriod, setSelectedPeriod] = useState("2026-08");
+  const [selectedPeriod, setSelectedPeriod] = useState("2026-09");
   const [isDark, setIsDark] = useState(false);
   const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
 
@@ -52,13 +51,6 @@ export default function KpiDashboardClient({ dashboardData }: KpiDashboardClient
   const gaugeValue = parsedNasionalScore && !isNaN(parsedNasionalScore) && parsedNasionalScore > 0
     ? parsedNasionalScore
     : currentTabData.totalAchievement;
-
-  const getDaysInMonth = (periodStr: string) => {
-    const [year, month] = periodStr.split("-").map(Number);
-    return new Date(year, month, 0).getDate();
-  };
-
-  const daysCount = getDaysInMonth(selectedPeriod);
 
   const syncData = async () => {
     await mutate();
@@ -182,6 +174,7 @@ export default function KpiDashboardClient({ dashboardData }: KpiDashboardClient
                 className="filter-select"
                 style={{ minWidth: "150px" }}
               >
+                <option value="2026-09">September 2026</option>
                 <option value="2026-08">August 2026</option>
                 <option value="2026-07">July 2026</option>
                 <option value="2026-06">June 2026</option>
@@ -245,18 +238,6 @@ export default function KpiDashboardClient({ dashboardData }: KpiDashboardClient
               hasComparison={currentTabData.hasComparison}
             />
           )}
-
-          {/* KPI Sections */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
-            {currentTabData.sections.map((section, index) => (
-              <KpiSectionTable
-                key={`${activeTab}-${section.name}`}
-                section={section}
-                daysCount={daysCount}
-                animationDelay={index * 100}
-              />
-            ))}
-          </div>
         </main>
       </div>
     </div>

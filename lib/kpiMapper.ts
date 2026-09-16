@@ -1,7 +1,7 @@
 import type { KpiDashboardData, TabData, KpiSection, KpiParameter, MonthlyKpiRow } from "./types";
 import { mockDashboardData } from "./mockDataNew";
 
-const DEFAULT_PERIOD = "2026-08";
+const DEFAULT_PERIOD = "2026-09";
 const PUBLIC_SHEET_ID = "1zYDTRPdQo8OuXP1MLRu3FbpSaEXb-zMEdY3jabmvXTI";
 const ALL_REKAP_GID = "1217380245";
 const DAILY_SHEET_GID = "781575490";
@@ -573,6 +573,7 @@ const MONTH_COLUMNS = [
   { key: "Jun", label: "Juni", achCol: 22, targetCol: 23, scoreCol: 24 },
   { key: "Jul", label: "Juli", achCol: 26, targetCol: 27, scoreCol: 28 },
   { key: "Aug", label: "Agustus", achCol: 33, targetCol: 34, scoreCol: 35 },
+  { key: "Sep", label: "September", achCol: 40, targetCol: 41, scoreCol: 42 },
 ];
 
 function parseNumericValue(val: string | undefined): number | null {
@@ -645,10 +646,13 @@ function extractParameterHistories(
     });
 
     const latestCol = MONTH_COLUMNS[MONTH_COLUMNS.length - 1];
-    const latestHistory = history[history.length - 1];
-    const currentAch = latestHistory?.ach ?? null;
-    const currentScore = clean(row[latestCol.scoreCol]) || "—";
-    const currentAchStr = clean(row[latestCol.achCol]) || "—";
+    const filledHistory = [...history].reverse().find((h) => h.ach !== null);
+    const activeHistory = filledHistory || history[history.length - 1];
+    const activeMonthCol = MONTH_COLUMNS.find((m) => m.key === activeHistory?.month) || latestCol;
+
+    const currentAch = activeHistory?.ach ?? null;
+    const currentScore = clean(row[activeMonthCol.scoreCol]) || "—";
+    const currentAchStr = clean(row[activeMonthCol.achCol]) || "—";
 
     let isPass = false;
     if (currentAch !== null && targetNum !== null) {

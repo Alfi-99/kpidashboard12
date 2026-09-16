@@ -46,6 +46,7 @@ const DEFAULT_OVERALL_TRENDS: OverallMonthlyTrend[] = [
   { month: "Jun", callCenter: 94.90, eCare: 85.00, nasional: 89.95, target: 100 },
   { month: "Jul", callCenter: 101.00, eCare: 93.55, nasional: 97.28, target: 100 },
   { month: "Aug", callCenter: 110.17, eCare: 107.33, nasional: 108.75, target: 100 },
+  { month: "Sep", callCenter: 108.07, eCare: 92.57, nasional: 100.32, target: 100 },
 ];
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -409,7 +410,7 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
   const [searchQuery, setSearchQuery] = useState<string>("");
 
   const { data: liveData, isValidating, mutate } = useSWR<KpiDashboardData>(
-    `/api/kpi?period=2026-08`,
+    `/api/kpi?period=2026-09`,
     fetcher,
     {
       fallbackData: initialData,
@@ -502,7 +503,11 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
   const passedParams = parameterHistories.filter((p) => p.isPass).length;
   const missedParams = totalParams - passedParams;
   const complianceRate = totalParams > 0 ? Math.round((passedParams / totalParams) * 100) : 0;
-  const latestMonthIndo = activeData.selectedPeriod?.toLowerCase().includes("aug") ? "Agustus" : (activeData.selectedPeriod?.toLowerCase().includes("jul") ? "Juli" : (activeData.selectedPeriod || "Agustus"));
+  const latestMonthIndo = activeData.selectedPeriod?.toLowerCase().includes("sep")
+    ? "September"
+    : (activeData.selectedPeriod?.toLowerCase().includes("aug")
+      ? "Agustus"
+      : (activeData.selectedPeriod?.toLowerCase().includes("jul") ? "Juli" : (activeData.selectedPeriod || "September")));
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg-primary)" }}>
