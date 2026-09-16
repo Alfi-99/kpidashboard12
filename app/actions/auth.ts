@@ -16,6 +16,11 @@ function getValidUsers(): Map<string, string> {
   const secondaryPass = process.env.AUTH_PASSWORD_2 || "kpi_pass1234";
   users.set(secondaryUser, secondaryPass);
 
+  // Call Center user (default: usercc1 / usercc1_password)
+  const ccUser = process.env.AUTH_USERNAME_3 || "usercc1";
+  const ccPass = process.env.AUTH_PASSWORD_3 || "usercc1_password";
+  users.set(ccUser, ccPass);
+
   // Additional users configured via AUTH_USERNAME_* / AUTH_PASSWORD_*
   for (const [key, value] of Object.entries(process.env)) {
     const match = key.match(/^AUTH_USERNAME_(\w+)$/);
