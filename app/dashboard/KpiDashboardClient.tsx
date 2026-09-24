@@ -230,6 +230,78 @@ export default function KpiDashboardClient({ dashboardData }: KpiDashboardClient
             </div>
           </div>
 
+          {/* GSheet Live Update Reference Bar */}
+          <div
+            className="animate-fade-in-up"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: "10px",
+              padding: "10px 16px",
+              marginBottom: "20px",
+              background: "var(--bg-card)",
+              border: "1px solid var(--border-default)",
+              borderRadius: "10px",
+              fontSize: "11.5px",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "3px 10px",
+                  borderRadius: "999px",
+                  background: "rgba(16, 185, 129, 0.12)",
+                  color: "#10B981",
+                  fontWeight: 800,
+                  fontSize: "11px",
+                  border: "1px solid rgba(16, 185, 129, 0.25)",
+                }}
+              >
+                <span
+                  style={{
+                    width: "7px",
+                    height: "7px",
+                    borderRadius: "50%",
+                    background: "#10B981",
+                    boxShadow: "0 0 6px #10B981",
+                  }}
+                />
+                Acuan Data GSheet: {activeData.lastUpdatedGSheet?.sheetCutoffNote || `Terisi s/d ${activeData.lastUpdatedGSheet?.latestDataPeriod || activeData.selectedPeriod}`}
+              </span>
+              <span style={{ color: "var(--text-secondary)", fontSize: "11px" }}>
+                Status: <strong>Call Center</strong> ({activeData.lastUpdatedGSheet?.callCenterLatestMonth || "Sep 2026"}) • <strong>e-Care</strong> ({activeData.lastUpdatedGSheet?.eCareLatestMonth || "Sep 2026"})
+              </span>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px", color: "var(--text-muted)" }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+              </svg>
+              <span>
+                Sinkronisasi Terakhir:{" "}
+                <strong style={{ color: "var(--text-primary)" }}>
+                  {lastSyncedAt
+                    ? new Intl.DateTimeFormat("id-ID", {
+                        weekday: "long",
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        timeZone: "Asia/Jakarta",
+                      }).format(lastSyncedAt) + " WIB"
+                    : activeData.lastUpdatedGSheet?.formattedSyncedAt || "Belum disinkronkan"}
+                </strong>
+              </span>
+            </div>
+          </div>
+
           {/* Monthly Comparison Table */}
           {currentTabData.monthlyComparison && currentTabData.monthlyComparison.length > 0 && (
             <MonthlyComparisonTable

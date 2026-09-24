@@ -1,4 +1,4 @@
-import type { KpiDashboardData, TabData, KpiSection, KpiParameter, MonthlyKpiRow } from "./types";
+import type { KpiDashboardData, TabData, KpiSection, KpiParameter, MonthlyKpiRow, GSheetUpdateInfo } from "./types";
 import { mockDashboardData } from "./mockDataNew";
 
 const DEFAULT_PERIOD = "2026-09";
@@ -767,6 +767,65 @@ function extractCategoryAndOverallTrends(
   return { categoryTrends, overallTrends };
 }
 
+function getLatestFilledMonth(rows: string[][]): string {
+  for (let i = MONTH_COLUMNS.length - 1; i >= 0; i--) {
+    const m = MONTH_COLUMNS[i];
+    const hasData = rows.some((r, idx) => {
+      if (idx < 2) return false;
+      const val = clean(r[m.achCol]);
+      return val && val !== "—" && val !== "#DIV/0!" && val !== "0%" && val !== "0" && val !== "";
+    });
+    if (hasData) {
+      return `${m.label} 2026`;
+    }
+  }
+  return "September 2026";
+}
+
+function extractCutoffDate(allTables: string[][][]): string | undefined {
+  const keywordRegex = /(?:cut-?off|data per|as of|update per|tgl|tanggal)\s*[:=]?\s*([0-9]{1,2}[ -/][A-Za-z0-9]+[ -/][0-9]{2,4}|[A-Za-z0-9\s]{4,25})/i;
+  for (const table of allTables) {
+    for (const row of table) {
+      for (const cell of row) {
+        if (!cell) continue;
+        const kwMatch = cell.match(keywordRegex);
+        if (kwMatch && kwMatch[1]) {
+          return kwMatch[1].trim();
+        }
+      }
+    }
+  }
+  return undefined;
+}
+
+async function fetchDriveModifiedTime(sheetId: string): Promise<string | null> {
+  const apiKey = process.env.GOOGLE_DRIVE_API_KEY?.trim();
+  if (!apiKey) return null;
+  try {
+    const res = await fetch(`https://www.googleapis.com/drive/v3/files/${sheetId}?fields=modifiedTime&key=${apiKey}`, {
+      cache: "no-store",
+    });
+    if (res.ok) {
+      const json = await res.json();
+      if (json.modifiedTime) {
+        const d = new Date(json.modifiedTime);
+        return new Intl.DateTimeFormat("id-ID", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          timeZone: "Asia/Jakarta",
+        }).format(d) + " WIB";
+      }
+    }
+  } catch {
+    // Ignore error
+  }
+  return null;
+}
+
 export async function getKpiData(period = DEFAULT_PERIOD): Promise<KpiDashboardData> {
   const configuredSheetId = process.env.GOOGLE_SHEET_ID?.trim();
   const sheetId = configuredSheetId && !/placeholder|example|xxxx|1AbCDefGh/i.test(configuredSheetId)
@@ -793,6 +852,33 @@ export async function getKpiData(period = DEFAULT_PERIOD): Promise<KpiDashboardD
     const parameterHistories = [...ccParams, ...ecParams];
 
     const { categoryTrends, overallTrends } = extractCategoryAndOverallTrends(ccMonthlyRows, ecMonthlyRows);
+
+    const ccLatestMonth = getLatestFilledMonth(ccMonthlyRows);
+    const ecLatestMonth = getLatestFilledMonth(ecMonthlyRows);
+    const customCutoff = extractCutoffDate([freetextRows, ccMonthlyRows, ecMonthlyRows]);
+    const driveModifiedTime = await fetchDriveModifiedTime(sheetId);
+
+    const now = new Date();
+    const formattedSyncedAt = new Intl.DateTimeFormat("id-ID", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: "Asia/Jakarta",
+    }).format(now) + " WIB";
+
+    const latestDataPeriod = ccLatestMonth === ecLatestMonth ? ccLatestMonth : `${ccLatestMonth} (CC) / ${ecLatestMonth} (e-Care)`;
+    const lastUpdatedGSheet: GSheetUpdateInfo = {
+      syncedAt: now.toISOString(),
+      formattedSyncedAt,
+      latestDataPeriod,
+      callCenterLatestMonth: ccLatestMonth,
+      eCareLatestMonth: ecLatestMonth,
+      sheetCutoffNote: customCutoff || `Data terisi s/d ${latestDataPeriod}`,
+      driveModifiedTime,
+    };
 
     const tabs = TAB_DEFINITIONS.map((definition) => {
       const highlights = freetextHighlightsMap[definition.tabKey];
@@ -871,6 +957,7 @@ export async function getKpiData(period = DEFAULT_PERIOD): Promise<KpiDashboardD
       parameterHistories,
       categoryTrends,
       overallTrends,
+      lastUpdatedGSheet,
     };
   } catch (error) {
     console.error("Error fetching or parsing Google Sheets data:", error);

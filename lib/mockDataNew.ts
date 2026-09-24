@@ -6,6 +6,14 @@ import type { KpiDashboardData } from "./types";
 
 export const mockDashboardData: KpiDashboardData = {
   selectedPeriod: "September 2026",
+  lastUpdatedGSheet: {
+    syncedAt: "2026-09-24T03:45:00.000Z",
+    formattedSyncedAt: "Kamis, 24 September 2026 pukul 10.45 WIB",
+    latestDataPeriod: "September 2026",
+    callCenterLatestMonth: "September 2026",
+    eCareLatestMonth: "September 2026",
+    sheetCutoffNote: "Data terisi s/d September 2026",
+  },
   tabs: [
     {
       tabName: "Call Center",

@@ -109,12 +109,23 @@ export interface OverallMonthlyTrend {
   target: number;
 }
 
+export interface GSheetUpdateInfo {
+  syncedAt: string;              // ISO string e.g. "2026-09-24T03:45:00.000Z"
+  formattedSyncedAt: string;     // e.g. "Kamis, 24 September 2026, 10:45 WIB"
+  latestDataPeriod: string;      // e.g. "September 2026"
+  callCenterLatestMonth: string; // e.g. "September 2026"
+  eCareLatestMonth: string;      // e.g. "September 2026"
+  sheetCutoffNote?: string;      // e.g. "Data Terisi s/d September 2026"
+  driveModifiedTime?: string | null;
+}
+
 export interface KpiDashboardData {
   tabs: TabData[];
   selectedPeriod: string; // e.g. "July 2026"
   parameterHistories?: ParameterHistoryItem[];
   categoryTrends?: CategoryMonthlyTrend[];
   overallTrends?: OverallMonthlyTrend[];
+  lastUpdatedGSheet?: GSheetUpdateInfo;
 }
 
 // Keep old KpiData for backward compatibility with existing API
