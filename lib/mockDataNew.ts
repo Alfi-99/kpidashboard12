@@ -12,7 +12,10 @@ export const mockDashboardData: KpiDashboardData = {
     latestDataPeriod: "September 2026",
     callCenterLatestMonth: "September 2026",
     eCareLatestMonth: "September 2026",
-    sheetCutoffNote: "Data terisi s/d September 2026",
+    sheetCutoffNote: "Cut-off: 23 September 2026",
+    gsheetLastModified: "2026-09-22T20:37:36.000Z",
+    formattedGsheetLastModified: "Rabu, 23 September 2026 pukul 03.37 WIB",
+    cutoffDate: "23 September 2026",
   },
   tabs: [
     {

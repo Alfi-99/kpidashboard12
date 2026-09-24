@@ -117,6 +117,9 @@ export interface GSheetUpdateInfo {
   eCareLatestMonth: string;      // e.g. "September 2026"
   sheetCutoffNote?: string;      // e.g. "Data Terisi s/d September 2026"
   driveModifiedTime?: string | null;
+  gsheetLastModified?: string | null;          // ISO string of actual GSheet edit time
+  formattedGsheetLastModified?: string | null; // e.g. "Rabu, 23 September 2026 pukul 03.37 WIB"
+  cutoffDate?: string | null;                  // e.g. "23 September 2026"
 }
 
 export interface KpiDashboardData {

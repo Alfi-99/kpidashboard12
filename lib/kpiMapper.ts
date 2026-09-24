@@ -826,6 +826,52 @@ async function fetchDriveModifiedTime(sheetId: string): Promise<string | null> {
   return null;
 }
 
+async function fetchGSheetEditTimestamp(sheetId: string): Promise<{
+  gsheetLastModified: string;
+  formattedGsheetLastModified: string;
+  cutoffDate: string;
+} | null> {
+  try {
+    const res = await fetch(`https://docs.google.com/spreadsheets/d/${sheetId}/edit`, {
+      cache: "no-store",
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      },
+    });
+    if (!res.ok) return null;
+    const html = await res.text();
+    // Google Sheets WIZ_global_data K1cgmc protobuf timestamp: [3, 1, [epochSeconds, nanos], 4]
+    const m = html.match(/\[\s*3\s*,\s*1\s*,\s*\[\s*(\d{10})\s*,\s*(\d+)\s*\]/);
+    if (m && m[1]) {
+      const sec = parseInt(m[1], 10);
+      const d = new Date(sec * 1000);
+      const formattedGsheetLastModified = new Intl.DateTimeFormat("id-ID", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: "Asia/Jakarta",
+      }).format(d) + " WIB";
+      const cutoffDate = new Intl.DateTimeFormat("id-ID", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        timeZone: "Asia/Jakarta",
+      }).format(d);
+      return {
+        gsheetLastModified: d.toISOString(),
+        formattedGsheetLastModified,
+        cutoffDate,
+      };
+    }
+  } catch {
+    // Ignore fetch error
+  }
+  return null;
+}
+
 export async function getKpiData(period = DEFAULT_PERIOD): Promise<KpiDashboardData> {
   const configuredSheetId = process.env.GOOGLE_SHEET_ID?.trim();
   const sheetId = configuredSheetId && !/placeholder|example|xxxx|1AbCDefGh/i.test(configuredSheetId)
@@ -833,12 +879,13 @@ export async function getKpiData(period = DEFAULT_PERIOD): Promise<KpiDashboardD
     : PUBLIC_SHEET_ID;
 
   try {
-    const [rekapRows, dailyRows, freetextRows, ccMonthlyRows, ecMonthlyRows] = await Promise.all([
+    const [rekapRows, dailyRows, freetextRows, ccMonthlyRows, ecMonthlyRows, gsheetEditInfo] = await Promise.all([
       fetchPublicSheetCsv(sheetId, "All Rekap"),
       fetchPublicSheetCsv(sheetId, "Daily"),
       fetchPublicSheetCsv(sheetId, "Freetext").catch(() => []),
       fetchPublicSheetCsv(sheetId, "Monthly - CallCenter").catch(() => []),
       fetchPublicSheetCsv(sheetId, "Monthly - Ecare").catch(() => []),
+      fetchGSheetEditTimestamp(sheetId).catch(() => null),
     ]);
 
     const freetextHighlightsMap = parseFreetext(freetextRows);
@@ -870,14 +917,26 @@ export async function getKpiData(period = DEFAULT_PERIOD): Promise<KpiDashboardD
     }).format(now) + " WIB";
 
     const latestDataPeriod = ccLatestMonth === ecLatestMonth ? ccLatestMonth : `${ccLatestMonth} (CC) / ${ecLatestMonth} (e-Care)`;
+    const cutoffDate = gsheetEditInfo?.cutoffDate || null;
+    const formattedGsheetLastModified = gsheetEditInfo?.formattedGsheetLastModified || driveModifiedTime || null;
+
+    const sheetCutoffNote = customCutoff
+      ? customCutoff
+      : cutoffDate
+      ? `Cut-off GSheet: ${cutoffDate}`
+      : `Terisi s/d ${latestDataPeriod}`;
+
     const lastUpdatedGSheet: GSheetUpdateInfo = {
       syncedAt: now.toISOString(),
       formattedSyncedAt,
       latestDataPeriod,
       callCenterLatestMonth: ccLatestMonth,
       eCareLatestMonth: ecLatestMonth,
-      sheetCutoffNote: customCutoff || `Data terisi s/d ${latestDataPeriod}`,
+      sheetCutoffNote,
       driveModifiedTime,
+      gsheetLastModified: gsheetEditInfo?.gsheetLastModified || null,
+      formattedGsheetLastModified,
+      cutoffDate,
     };
 
     const tabs = TAB_DEFINITIONS.map((definition) => {

@@ -720,32 +720,29 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
                   boxShadow: "0 0 6px #10B981",
                 }}
               />
-              Acuan Data GSheet: {activeData.lastUpdatedGSheet?.sheetCutoffNote || `Terisi s/d ${activeData.lastUpdatedGSheet?.latestDataPeriod || "September 2026"}`}
+              Acuan Cut-Off GSheet: {activeData.lastUpdatedGSheet?.sheetCutoffNote || (activeData.lastUpdatedGSheet?.cutoffDate ? `Cut-off ${activeData.lastUpdatedGSheet.cutoffDate}` : `Terisi s/d ${activeData.lastUpdatedGSheet?.latestDataPeriod || "September 2026"}`)}
             </span>
             <span style={{ color: "var(--text-secondary)", fontSize: "11px" }}>
-              Status: <strong>Call Center</strong> ({activeData.lastUpdatedGSheet?.callCenterLatestMonth || "Sep 2026"}) • <strong>e-Care</strong> ({activeData.lastUpdatedGSheet?.eCareLatestMonth || "Sep 2026"})
+              Status Data: <strong>Call Center</strong> ({activeData.lastUpdatedGSheet?.callCenterLatestMonth || "Sep 2026"}) • <strong>e-Care</strong> ({activeData.lastUpdatedGSheet?.eCareLatestMonth || "Sep 2026"})
             </span>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px", color: "var(--text-muted)" }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
-            </svg>
-            <span>
-              Sinkronisasi Terakhir:{" "}
-              <strong style={{ color: "var(--text-primary)" }}>
-                {lastSyncedAt
-                  ? new Intl.DateTimeFormat("id-ID", {
-                      weekday: "long",
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      timeZone: "Asia/Jakarta",
-                    }).format(lastSyncedAt) + " WIB"
-                  : activeData.lastUpdatedGSheet?.formattedSyncedAt || "Belum disinkronkan"}
-              </strong>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "11px", color: "var(--text-muted)", flexWrap: "wrap" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+              </svg>
+              <span>
+                Update Terakhir di GSheet:{" "}
+                <strong style={{ color: "var(--text-primary)" }}>
+                  {activeData.lastUpdatedGSheet?.formattedGsheetLastModified || activeData.lastUpdatedGSheet?.driveModifiedTime || (activeData.lastUpdatedGSheet?.cutoffDate ? `${activeData.lastUpdatedGSheet.cutoffDate}` : "23 September 2026")}
+                </strong>
+              </span>
+            </div>
+            <span style={{ fontSize: "10px", color: "var(--text-muted)", opacity: 0.85 }}>
+              (Sinkron Web: {lastSyncedAt
+                ? lastSyncedAt.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) + " WIB"
+                : "Terkini"})
             </span>
           </div>
         </div>
