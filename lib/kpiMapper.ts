@@ -1,5 +1,6 @@
 import type { KpiDashboardData, TabData, KpiSection, KpiParameter, MonthlyKpiRow, GSheetUpdateInfo } from "./types";
 import { mockDashboardData } from "./mockDataNew";
+import { hasValidCredentials, fetchSheetsBatch } from "./googleSheets";
 
 const DEFAULT_PERIOD = "2026-09";
 const PUBLIC_SHEET_ID = "1zYDTRPdQo8OuXP1MLRu3FbpSaEXb-zMEdY3jabmvXTI";
@@ -879,14 +880,47 @@ export async function getKpiData(period = DEFAULT_PERIOD): Promise<KpiDashboardD
     : PUBLIC_SHEET_ID;
 
   try {
-    const [rekapRows, dailyRows, freetextRows, ccMonthlyRows, ecMonthlyRows, gsheetEditInfo] = await Promise.all([
-      fetchPublicSheetCsv(sheetId, "All Rekap"),
-      fetchPublicSheetCsv(sheetId, "Daily"),
-      fetchPublicSheetCsv(sheetId, "Freetext").catch(() => []),
-      fetchPublicSheetCsv(sheetId, "Monthly - CallCenter").catch(() => []),
-      fetchPublicSheetCsv(sheetId, "Monthly - Ecare").catch(() => []),
-      fetchGSheetEditTimestamp(sheetId).catch(() => null),
-    ]);
+    let rekapRows: string[][] = [];
+    let dailyRows: string[][] = [];
+    let freetextRows: string[][] = [];
+    let ccMonthlyRows: string[][] = [];
+    let ecMonthlyRows: string[][] = [];
+    let gsheetEditInfo: any = null;
+
+    if (hasValidCredentials()) {
+      try {
+        const batch = await fetchSheetsBatch(
+          ["All Rekap", "Daily", "Freetext", "Monthly - CallCenter", "Monthly - Ecare"],
+          sheetId
+        );
+        rekapRows = batch["All Rekap"] || [];
+        dailyRows = batch["Daily"] || [];
+        freetextRows = batch["Freetext"] || [];
+        ccMonthlyRows = batch["Monthly - CallCenter"] || [];
+        ecMonthlyRows = batch["Monthly - Ecare"] || [];
+      } catch (authErr) {
+        console.warn("Authenticated Google Sheets batch fetch failed, falling back to public CSV:", authErr);
+      }
+    }
+
+    if (!rekapRows.length || !dailyRows.length) {
+      const [rRows, dRows, fRows, cRows, eRows, editInfo] = await Promise.all([
+        fetchPublicSheetCsv(sheetId, "All Rekap").catch(() => []),
+        fetchPublicSheetCsv(sheetId, "Daily").catch(() => []),
+        fetchPublicSheetCsv(sheetId, "Freetext").catch(() => []),
+        fetchPublicSheetCsv(sheetId, "Monthly - CallCenter").catch(() => []),
+        fetchPublicSheetCsv(sheetId, "Monthly - Ecare").catch(() => []),
+        fetchGSheetEditTimestamp(sheetId).catch(() => null),
+      ]);
+      rekapRows = rekapRows.length ? rekapRows : rRows;
+      dailyRows = dailyRows.length ? dailyRows : dRows;
+      freetextRows = freetextRows.length ? freetextRows : fRows;
+      ccMonthlyRows = ccMonthlyRows.length ? ccMonthlyRows : cRows;
+      ecMonthlyRows = ecMonthlyRows.length ? ecMonthlyRows : eRows;
+      gsheetEditInfo = editInfo;
+    } else {
+      gsheetEditInfo = await fetchGSheetEditTimestamp(sheetId).catch(() => null);
+    }
 
     const freetextHighlightsMap = parseFreetext(freetextRows);
     const monthlyResultMap: Record<string, MonthlyParseResult> = {
