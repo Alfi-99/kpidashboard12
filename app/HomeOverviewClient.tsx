@@ -411,7 +411,7 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
   const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
 
   const { data: liveData, isValidating, mutate } = useSWR<KpiDashboardData>(
-    `/api/kpi?period=2026-09`,
+    `/api/kpi?period=2026-10`,
     fetcher,
     {
       fallbackData: initialData,
@@ -505,11 +505,13 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
   const passedParams = parameterHistories.filter((p) => p.isPass).length;
   const missedParams = totalParams - passedParams;
   const complianceRate = totalParams > 0 ? Math.round((passedParams / totalParams) * 100) : 0;
-  const latestMonthIndo = activeData.selectedPeriod?.toLowerCase().includes("sep")
-    ? "September"
-    : (activeData.selectedPeriod?.toLowerCase().includes("aug")
-      ? "Agustus"
-      : (activeData.selectedPeriod?.toLowerCase().includes("jul") ? "Juli" : (activeData.selectedPeriod || "September")));
+  const latestMonthIndo = activeData.selectedPeriod?.toLowerCase().includes("okt") || activeData.selectedPeriod?.toLowerCase().includes("oct")
+    ? "Oktober"
+    : (activeData.selectedPeriod?.toLowerCase().includes("sep")
+      ? "September"
+      : (activeData.selectedPeriod?.toLowerCase().includes("aug")
+        ? "Agustus"
+        : (activeData.selectedPeriod?.toLowerCase().includes("jul") ? "Juli" : (activeData.selectedPeriod || "Oktober"))));
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg-primary)" }}>
@@ -720,10 +722,10 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
                   boxShadow: "0 0 6px #10B981",
                 }}
               />
-              Acuan Cut-Off GSheet: {activeData.lastUpdatedGSheet?.sheetCutoffNote || (activeData.lastUpdatedGSheet?.cutoffDate ? `Cut-off ${activeData.lastUpdatedGSheet.cutoffDate}` : `Terisi s/d ${activeData.lastUpdatedGSheet?.latestDataPeriod || "September 2026"}`)}
+              Acuan Cut-Off GSheet: {activeData.lastUpdatedGSheet?.sheetCutoffNote || (activeData.lastUpdatedGSheet?.cutoffDate ? `Cut-off ${activeData.lastUpdatedGSheet.cutoffDate}` : `Terisi s/d ${activeData.lastUpdatedGSheet?.latestDataPeriod || "Oktober 2026"}`)}
             </span>
             <span style={{ color: "var(--text-secondary)", fontSize: "11px" }}>
-              Status Data: <strong>Call Center</strong> ({activeData.lastUpdatedGSheet?.callCenterLatestMonth || "Sep 2026"}) • <strong>e-Care</strong> ({activeData.lastUpdatedGSheet?.eCareLatestMonth || "Sep 2026"})
+              Status Data: <strong>Call Center</strong> ({activeData.lastUpdatedGSheet?.callCenterLatestMonth || "Sep 2026"}) • <strong>e-Care</strong> ({activeData.lastUpdatedGSheet?.eCareLatestMonth || "Okt 2026"})
             </span>
           </div>
 
@@ -735,7 +737,7 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
               <span>
                 Update Terakhir di GSheet:{" "}
                 <strong style={{ color: "var(--text-primary)" }}>
-                  {activeData.lastUpdatedGSheet?.formattedGsheetLastModified || activeData.lastUpdatedGSheet?.driveModifiedTime || (activeData.lastUpdatedGSheet?.cutoffDate ? `${activeData.lastUpdatedGSheet.cutoffDate}` : "23 September 2026")}
+                  {activeData.lastUpdatedGSheet?.formattedGsheetLastModified || activeData.lastUpdatedGSheet?.driveModifiedTime || (activeData.lastUpdatedGSheet?.cutoffDate ? `${activeData.lastUpdatedGSheet.cutoffDate}` : "20 Oktober 2026")}
                 </strong>
               </span>
             </div>
@@ -746,6 +748,31 @@ export default function HomeOverviewClient({ initialData }: HomeOverviewClientPr
             </span>
           </div>
         </div>
+
+        {/* Fallback Notice for channel if current month is not yet populated in GSheet */}
+        {activeTab?.isFallbackPeriod && (
+          <div
+            className="animate-fade-in-up"
+            style={{
+              marginBottom: "20px",
+              padding: "12px 18px",
+              borderRadius: "10px",
+              background: "rgba(245, 158, 11, 0.1)",
+              border: "1px solid rgba(245, 158, 11, 0.3)",
+              color: "#d97706",
+              fontSize: "12.5px",
+              fontWeight: 600,
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+            }}
+          >
+            <span style={{ fontSize: "16px" }}>ℹ️</span>
+            <span>
+              Data <strong>{channelLabel}</strong> untuk bulan <strong>{latestMonthIndo} 2026</strong> belum diisi di Google Sheets. Menampilkan data historis terkini (<strong>{activeTab.effectivePeriodLabel || "September 2026"}</strong>).
+            </span>
+          </div>
+        )}
 
         {/* ─── Executive Summary KPI Cards ─── */}
         <div

@@ -2,7 +2,7 @@ import type { KpiDashboardData, TabData, KpiSection, KpiParameter, MonthlyKpiRow
 import { mockDashboardData } from "./mockDataNew";
 import { hasValidCredentials, fetchSheetsBatch } from "./googleSheets";
 
-const DEFAULT_PERIOD = "2026-09";
+const DEFAULT_PERIOD = "2026-10";
 const PUBLIC_SHEET_ID = "1zYDTRPdQo8OuXP1MLRu3FbpSaEXb-zMEdY3jabmvXTI";
 const ALL_REKAP_GID = "1217380245";
 const DAILY_SHEET_GID = "781575490";
@@ -368,6 +368,8 @@ const MONTH_NAMES_SHORT = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug
 type MonthlyParseResult = {
   rows: MonthlyKpiRow[];
   hasComparison: boolean;
+  isFallbackPeriod?: boolean;
+  effectivePeriodLabel?: string;
   regionalComparison?: {
     bdgScore: string;
     smgScore: string;
@@ -398,6 +400,35 @@ function parseMonthlyComparison(rows: string[][], period: string): MonthlyParseR
     if (tokens.some((t) => header.includes(normalize(t)))) {
       periodColIndex = c;
       break;
+    }
+  }
+
+  let isFallbackPeriod = false;
+  let effectivePeriodLabel = periodLabel(period);
+
+  // If the requested period column is not found in this sheet (e.g. Call Center hasn't populated October yet),
+  // fall back to the latest month that actually has populated data in this sheet.
+  if (periodColIndex === -1) {
+    for (let i = MONTH_COLUMNS.length - 1; i >= 0; i--) {
+      const mCol = MONTH_COLUMNS[i];
+      const mKey = mCol.key.toLowerCase();
+      const mTokens = [`${mKey}-${yy}`, `${mKey}${yy}`, mKey];
+      for (let c = 0; c < row0.length; c++) {
+        const header = normalize(row0[c]);
+        if (mTokens.some((t) => header.includes(normalize(t)))) {
+          const hasData = rows.slice(2).some((r) => {
+            const v = clean(r[c]);
+            return v && v !== "—" && v !== "#DIV/0!" && v !== "0%" && v !== "";
+          });
+          if (hasData) {
+            periodColIndex = c;
+            isFallbackPeriod = true;
+            effectivePeriodLabel = `${mCol.label} ${year}`;
+            break;
+          }
+        }
+      }
+      if (periodColIndex !== -1) break;
     }
   }
 
@@ -573,7 +604,7 @@ function parseMonthlyComparison(rows: string[][], period: string): MonthlyParseR
     }
   }
 
-  return { rows: result, hasComparison: hasBdgSmg, regionalComparison };
+  return { rows: result, hasComparison: hasBdgSmg, isFallbackPeriod, effectivePeriodLabel, regionalComparison };
 }
 
 function periodLabel(period: string): string {
@@ -593,6 +624,7 @@ const MONTH_COLUMNS = [
   { key: "Jul", label: "Juli", achCol: 26, targetCol: 27, scoreCol: 28 },
   { key: "Aug", label: "Agustus", achCol: 33, targetCol: 34, scoreCol: 35 },
   { key: "Sep", label: "September", achCol: 40, targetCol: 41, scoreCol: 42 },
+  { key: "Oct", label: "Oktober", achCol: 47, targetCol: 48, scoreCol: 49 },
 ];
 
 function parseNumericValue(val: string | undefined): number | null {
@@ -780,7 +812,7 @@ function getLatestFilledMonth(rows: string[][]): string {
       return `${m.label} 2026`;
     }
   }
-  return "September 2026";
+  return "Oktober 2026";
 }
 
 function extractCutoffDate(allTables: string[][][]): string | undefined {
@@ -840,8 +872,8 @@ async function fetchGSheetEditTimestamp(sheetId: string): Promise<{
       },
     });
     void res;
-    // STATIC: Jumat, 9 Oktober 2026 09.27 WIB
-    const m = ["", "1791512820"];
+    // STATIC: Selasa, 20 Oktober 2026 10.30 WIB
+    const m = ["", "1792467000"];
 
     if (m && m[1]) {
       const sec = parseInt(m[1], 10);
@@ -1040,6 +1072,8 @@ export async function getKpiData(period = DEFAULT_PERIOD): Promise<KpiDashboardD
         sections,
         monthlyComparison,
         hasComparison: mResult.hasComparison,
+        isFallbackPeriod: mResult.isFallbackPeriod,
+        effectivePeriodLabel: mResult.effectivePeriodLabel,
         regionalComparison: mResult.regionalComparison,
       };
     });

@@ -63,6 +63,8 @@ export interface TabData {
   summaryHighlight: string[];
   monthlyComparison?: MonthlyKpiRow[];
   hasComparison?: boolean;
+  isFallbackPeriod?: boolean;
+  effectivePeriodLabel?: string;
   regionalComparison?: {
     bdgScore: string;
     smgScore: string;

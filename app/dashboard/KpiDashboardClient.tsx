@@ -20,7 +20,7 @@ interface KpiDashboardClientProps {
 
 export default function KpiDashboardClient({ dashboardData }: KpiDashboardClientProps) {
   const [activeTab, setActiveTab] = useState(dashboardData.tabs[0]?.tabKey || "callCenter");
-  const [selectedPeriod, setSelectedPeriod] = useState("2026-09");
+  const [selectedPeriod, setSelectedPeriod] = useState("2026-10");
   const [isDark, setIsDark] = useState(false);
   const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
 
@@ -174,6 +174,7 @@ export default function KpiDashboardClient({ dashboardData }: KpiDashboardClient
                 className="filter-select"
                 style={{ minWidth: "150px" }}
               >
+                <option value="2026-10">Oktober 2026</option>
                 <option value="2026-09">September 2026</option>
                 <option value="2026-08">August 2026</option>
                 <option value="2026-07">July 2026</option>
@@ -287,7 +288,7 @@ export default function KpiDashboardClient({ dashboardData }: KpiDashboardClient
                 <span>
                   Update Terakhir di GSheet:{" "}
                   <strong style={{ color: "var(--text-primary)" }}>
-                    {activeData.lastUpdatedGSheet?.formattedGsheetLastModified || activeData.lastUpdatedGSheet?.driveModifiedTime || (activeData.lastUpdatedGSheet?.cutoffDate ? `${activeData.lastUpdatedGSheet.cutoffDate}` : "23 September 2026")}
+                    {activeData.lastUpdatedGSheet?.formattedGsheetLastModified || activeData.lastUpdatedGSheet?.driveModifiedTime || (activeData.lastUpdatedGSheet?.cutoffDate ? `${activeData.lastUpdatedGSheet.cutoffDate}` : "20 Oktober 2026")}
                   </strong>
                 </span>
               </div>
@@ -298,6 +299,28 @@ export default function KpiDashboardClient({ dashboardData }: KpiDashboardClient
               </span>
             </div>
           </div>
+
+          {/* Fallback Notice for tabs where current month is not yet in GSheet */}
+          {currentTabData.isFallbackPeriod && (
+            <div style={{
+              marginBottom: "18px",
+              padding: "12px 18px",
+              borderRadius: "10px",
+              background: "rgba(245, 158, 11, 0.1)",
+              border: "1px solid rgba(245, 158, 11, 0.3)",
+              color: "#d97706",
+              fontSize: "12px",
+              fontWeight: 600,
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+            }}>
+              <span style={{ fontSize: "15px" }}>ℹ️</span>
+              <span>
+                Data <strong>{currentTabData.tabName}</strong> untuk periode <strong>{activeData.selectedPeriod}</strong> belum tersedia di Google Sheets. Menampilkan data historis terkini (<strong>{currentTabData.effectivePeriodLabel || "September 2026"}</strong>).
+              </span>
+            </div>
+          )}
 
           {/* Monthly Comparison Table */}
           {currentTabData.monthlyComparison && currentTabData.monthlyComparison.length > 0 && (

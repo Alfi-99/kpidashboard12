@@ -5,17 +5,17 @@
 import type { KpiDashboardData } from "./types";
 
 export const mockDashboardData: KpiDashboardData = {
-  selectedPeriod: "September 2026",
+  selectedPeriod: "Oktober 2026",
   lastUpdatedGSheet: {
-    syncedAt: "2026-09-24T03:45:00.000Z",
-    formattedSyncedAt: "Kamis, 24 September 2026 pukul 10.45 WIB",
-    latestDataPeriod: "September 2026",
+    syncedAt: "2026-10-20T03:30:00.000Z",
+    formattedSyncedAt: "Selasa, 20 Oktober 2026 pukul 10.30 WIB",
+    latestDataPeriod: "September 2026 (CC) / Oktober 2026 (e-Care)",
     callCenterLatestMonth: "September 2026",
-    eCareLatestMonth: "September 2026",
-    sheetCutoffNote: "Cut-off: 23 September 2026",
-    gsheetLastModified: "2026-09-22T20:37:36.000Z",
-    formattedGsheetLastModified: "Rabu, 23 September 2026 pukul 03.37 WIB",
-    cutoffDate: "23 September 2026",
+    eCareLatestMonth: "Oktober 2026",
+    sheetCutoffNote: "Cut-off GSheet: 20 Oktober 2026",
+    gsheetLastModified: "2026-10-20T03:30:00.000Z",
+    formattedGsheetLastModified: "Selasa, 20 Oktober 2026 pukul 10.30 WIB",
+    cutoffDate: "20 Oktober 2026",
   },
   tabs: [
     {
@@ -124,12 +124,12 @@ export const mockDashboardData: KpiDashboardData = {
     {
       tabName: "e-Care",
       tabKey: "eCare",
-      totalAchievement: 93.55,
+      totalAchievement: 98.48,
       hasComparison: true,
       regionalComparison: {
-        nasionalScore: "93.55%",
-        bdgScore: "94.81%",
-        smgScore: "91.99%",
+        nasionalScore: "98.48%",
+        bdgScore: "99.28%",
+        smgScore: "101.98%",
       },
       sections: [
         {
