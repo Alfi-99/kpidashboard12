@@ -6,6 +6,8 @@ import useSWR from "swr";
 import type { KpiDashboardData } from "@/lib/types";
 import AchievementGauge from "@/components/AchievementGauge";
 import MonthlyComparisonTable from "@/components/MonthlyComparisonTable";
+import MultiMonthTrendTable from "@/components/MultiMonthTrendTable";
+import RegionalTrendChart from "@/components/RegionalTrendChart";
 import RegionalComparisonWidget from "@/components/RegionalComparisonWidget";
 import SummaryHighlight from "@/components/SummaryHighlight";
 import TabSelector from "@/components/TabSelector";
@@ -329,6 +331,28 @@ export default function KpiDashboardClient({ dashboardData }: KpiDashboardClient
               period={activeData.selectedPeriod}
               hasComparison={currentTabData.hasComparison}
             />
+          )}
+
+          {/* Daily / Multi-Month Trend Table (Januari s/d MTD) */}
+          {currentTabData.multiMonthRows && currentTabData.multiMonthRows.length > 0 && (
+            <div style={{ marginTop: "32px" }}>
+              <MultiMonthTrendTable
+                rows={currentTabData.multiMonthRows}
+                channelName={currentTabData.tabName}
+                activePeriod={activeData.selectedPeriod}
+              />
+            </div>
+          )}
+
+          {/* Interactive Regional Trend Chart (Nasional, Semarang, Bandung dari Bulan ke Bulan) */}
+          {currentTabData.regionalMonthlyTrends && currentTabData.regionalMonthlyTrends.length > 0 && (
+            <div style={{ marginTop: "32px" }}>
+              <RegionalTrendChart
+                trends={currentTabData.regionalMonthlyTrends}
+                channelName={currentTabData.tabName}
+                activePeriod={activeData.selectedPeriod}
+              />
+            </div>
           )}
         </main>
       </div>

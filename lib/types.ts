@@ -55,6 +55,38 @@ export interface MonthlyKpiRow {
   isSubRow?: boolean;
 }
 
+export interface MultiMonthParamValue {
+  ach?: string;
+  achTarget?: string;
+  score?: string;
+  bdgScore?: string;
+  smgScore?: string;
+}
+
+export interface MultiMonthParamRow {
+  no: string;
+  parameter: string;
+  definisi?: string;
+  target: string;
+  targetNum?: number | null;
+  bobot: string;
+  category: string;
+  isCategoryRow?: boolean;
+  isTotalRow?: boolean;
+  isSubRow?: boolean;
+  isLowerBetter?: boolean;
+  monthlyValues: Record<string, MultiMonthParamValue>;
+}
+
+export interface RegionalMonthlyTrendItem {
+  month: string;      // "Jan", "Feb", ...
+  label: string;      // "Januari", "Februari", ...
+  nasional: number | null;
+  bdg: number | null;
+  smg: number | null;
+  target: number;     // 100
+}
+
 export interface TabData {
   tabName: string;       // "Call Center" | "e-Care"
   tabKey: string;        // "callCenter" | "eCare"
@@ -70,6 +102,8 @@ export interface TabData {
     smgScore: string;
     nasionalScore: string;
   };
+  multiMonthRows?: MultiMonthParamRow[];
+  regionalMonthlyTrends?: RegionalMonthlyTrendItem[];
 }
 
 export interface ParameterMonthlyPoint {

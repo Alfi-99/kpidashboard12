@@ -1,4 +1,4 @@
-import type { KpiDashboardData, TabData, KpiSection, KpiParameter, MonthlyKpiRow, GSheetUpdateInfo } from "./types";
+import type { KpiDashboardData, TabData, KpiSection, KpiParameter, MonthlyKpiRow, GSheetUpdateInfo, MultiMonthParamRow, MultiMonthParamValue, RegionalMonthlyTrendItem } from "./types";
 import { mockDashboardData } from "./mockDataNew";
 import { hasValidCredentials, fetchSheetsBatch } from "./googleSheets";
 
@@ -615,17 +615,141 @@ function periodLabel(period: string): string {
 }
 
 const MONTH_COLUMNS = [
-  { key: "Jan", label: "Januari", achCol: 7, targetCol: 8, scoreCol: 9 },
-  { key: "Feb", label: "Februari", achCol: 10, targetCol: 11, scoreCol: 12 },
-  { key: "Mar", label: "Maret", achCol: 13, targetCol: 14, scoreCol: 15 },
-  { key: "Apr", label: "April", achCol: 16, targetCol: 17, scoreCol: 18 },
-  { key: "May", label: "Mei", achCol: 19, targetCol: 20, scoreCol: 21 },
-  { key: "Jun", label: "Juni", achCol: 22, targetCol: 23, scoreCol: 24 },
-  { key: "Jul", label: "Juli", achCol: 26, targetCol: 27, scoreCol: 28 },
-  { key: "Aug", label: "Agustus", achCol: 33, targetCol: 34, scoreCol: 35 },
-  { key: "Sep", label: "September", achCol: 40, targetCol: 41, scoreCol: 42 },
-  { key: "Oct", label: "Oktober", achCol: 47, targetCol: 48, scoreCol: 49 },
+  { key: "Jan", label: "Januari", achCol: 7, targetCol: 8, scoreCol: 9, bdgScoreCol: null as number | null, smgScoreCol: null as number | null },
+  { key: "Feb", label: "Februari", achCol: 10, targetCol: 11, scoreCol: 12, bdgScoreCol: null as number | null, smgScoreCol: null as number | null },
+  { key: "Mar", label: "Maret", achCol: 13, targetCol: 14, scoreCol: 15, bdgScoreCol: null as number | null, smgScoreCol: null as number | null },
+  { key: "Apr", label: "April", achCol: 16, targetCol: 17, scoreCol: 18, bdgScoreCol: null as number | null, smgScoreCol: null as number | null },
+  { key: "May", label: "Mei", achCol: 19, targetCol: 20, scoreCol: 21, bdgScoreCol: null as number | null, smgScoreCol: null as number | null },
+  { key: "Jun", label: "Juni", achCol: 22, targetCol: 23, scoreCol: 24, bdgScoreCol: null as number | null, smgScoreCol: null as number | null },
+  { key: "Jul", label: "Juli", achCol: 26, targetCol: 27, scoreCol: 28, bdgScoreCol: 30, smgScoreCol: 32 },
+  { key: "Aug", label: "Agustus", achCol: 33, targetCol: 34, scoreCol: 35, bdgScoreCol: 37, smgScoreCol: 39 },
+  { key: "Sep", label: "September", achCol: 40, targetCol: 41, scoreCol: 42, bdgScoreCol: 44, smgScoreCol: 46 },
+  { key: "Oct", label: "Oktober", achCol: 47, targetCol: 48, scoreCol: 49, bdgScoreCol: 51, smgScoreCol: 53 },
 ];
+
+function extractRegionalMonthlyTrends(rows: string[][]): RegionalMonthlyTrendItem[] {
+  const totalRow = rows.find(
+    (r) => normalize(r[0] || "") === "total" || normalize(r[1] || "") === "total"
+  );
+  if (!totalRow) return [];
+
+  return MONTH_COLUMNS.map((m) => {
+    const nas = parseNumericValue(totalRow[m.scoreCol]);
+    const bdg = m.bdgScoreCol ? parseNumericValue(totalRow[m.bdgScoreCol]) : null;
+    const smg = m.smgScoreCol ? parseNumericValue(totalRow[m.smgScoreCol]) : null;
+    return {
+      month: m.key,
+      label: m.label,
+      nasional: nas,
+      bdg,
+      smg,
+      target: 100,
+    };
+  });
+}
+
+function extractMultiMonthRows(rows: string[][]): MultiMonthParamRow[] {
+  const result: MultiMonthParamRow[] = [];
+  let currentCategory = "Revenue";
+  let currentCategoryParamNo = 0;
+  const targetCol = 5;
+  const bobotCol = 6;
+
+  for (let r = 2; r < rows.length; r++) {
+    const row = rows[r] || [];
+    const no = clean(row[0]);
+    let paramName = clean(row[1]);
+    const def = clean(row[2]);
+    const target = clean(row[targetCol]);
+    const bobot = clean(row[bobotCol]);
+
+    const normParam = normalize(paramName);
+    const normNo = normalize(no);
+
+    if (normParam === "revenue") {
+      currentCategory = "Revenue";
+      currentCategoryParamNo = 0;
+    } else if (normParam === "customerexperience") {
+      currentCategory = "Customer Experience";
+      currentCategoryParamNo = 0;
+    } else if (normParam === "internalprocess") {
+      currentCategory = "Internal Process";
+      currentCategoryParamNo = 0;
+    }
+
+    const isCategory =
+      (normParam === "revenue" ||
+        normParam === "customerexperience" ||
+        normParam === "internalprocess") &&
+      !target;
+
+    const isTotal =
+      normNo === "total" ||
+      normParam === "total" ||
+      (no === "" && paramName === "" && def === "" && (bobot === "100%" || bobot === "100"));
+
+    if (!paramName && def) {
+      const normDef = normalize(def);
+      if (normDef.includes("komplainpelangganmobile") || normDef.includes("komplainmobile")) paramName = "FCR Mobile Komplain";
+      else if (normDef.includes("komplainreciprocal") || normDef.includes("reciprocal")) paramName = "FCR Fixed Komplain Reciprocal";
+      else if (normDef.includes("inslafixed")) paramName = "Quality of Ticket : In SLA Fixed";
+      else if (normDef.includes("closeratetiketmobile")) paramName = "Close rate tiket Mobile";
+      else paramName = def.slice(0, 32);
+    }
+
+    const normParamName = normalize(paramName);
+    if (normParamName === "fcrmobile" || normParamName === "fcrmobilepermintaan") paramName = "FCR Mobile Permintaan";
+    else if (normParamName === "fcrmobilekomplain") paramName = "FCR Mobile Komplain";
+    else if (normParamName === "fcrfixed" || normParamName === "fcrfixedkomplain") paramName = "FCR Fixed Komplain";
+    else if (normParamName === "fcrfixedreciprocal" || normParamName === "fcrfixedkomplainreciprocal") paramName = "FCR Fixed Komplain Reciprocal";
+    else if (normParamName === "qualityofticket" || normParamName === "inslamobile") paramName = "Quality of Ticket : In SLA Mobile";
+    else if (normParamName === "inslafixed") paramName = "Quality of Ticket : In SLA Fixed";
+
+    if (!paramName && !def && !isCategory && !isTotal) continue;
+
+    const lowerIsBetter = ["repeat", "rcr", "caps", "respond time", "response time"].some((k) =>
+      (paramName || "").toLowerCase().includes(k)
+    );
+    const targetNum = parseNumericValue(target);
+
+    const monthlyValues: Record<string, MultiMonthParamValue> = {};
+    MONTH_COLUMNS.forEach((m) => {
+      monthlyValues[m.key] = {
+        ach: clean(row[m.achCol]),
+        achTarget: clean(row[m.targetCol]),
+        score: clean(row[m.scoreCol]),
+        bdgScore: m.bdgScoreCol ? clean(row[m.bdgScoreCol]) : undefined,
+        smgScore: m.smgScoreCol ? clean(row[m.smgScoreCol]) : undefined,
+      };
+    });
+
+    let displayNo = no;
+    if (!isCategory && !isTotal) {
+      if (!displayNo) {
+        currentCategoryParamNo++;
+        displayNo = String(currentCategoryParamNo);
+      } else {
+        currentCategoryParamNo = parseInt(displayNo, 10) || currentCategoryParamNo + 1;
+      }
+    }
+
+    result.push({
+      no: isCategory || isTotal ? "" : displayNo,
+      parameter: isTotal ? "Total Achievement" : isCategory ? currentCategory : paramName,
+      definisi: def,
+      target,
+      targetNum,
+      bobot: isTotal ? "100%" : bobot,
+      category: isTotal ? "Total" : currentCategory,
+      isCategoryRow: isCategory,
+      isTotalRow: isTotal,
+      isLowerBetter: lowerIsBetter,
+      monthlyValues,
+    });
+  }
+
+  return result;
+}
 
 function parseNumericValue(val: string | undefined): number | null {
   if (!val || val === "—" || val === "#DIV/0!" || val === "") return null;
@@ -1066,6 +1190,10 @@ export async function getKpiData(period = DEFAULT_PERIOD): Promise<KpiDashboardD
         };
       });
 
+      const channelRows = definition.tabKey === "callCenter" ? ccMonthlyRows : ecMonthlyRows;
+      const multiMonthRows = extractMultiMonthRows(channelRows);
+      const regionalMonthlyTrends = extractRegionalMonthlyTrends(channelRows);
+
       return {
         ...tabData,
         totalAchievement,
@@ -1075,6 +1203,8 @@ export async function getKpiData(period = DEFAULT_PERIOD): Promise<KpiDashboardD
         isFallbackPeriod: mResult.isFallbackPeriod,
         effectivePeriodLabel: mResult.effectivePeriodLabel,
         regionalComparison: mResult.regionalComparison,
+        multiMonthRows,
+        regionalMonthlyTrends,
       };
     });
 
