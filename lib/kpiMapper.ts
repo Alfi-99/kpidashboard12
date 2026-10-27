@@ -615,16 +615,16 @@ function periodLabel(period: string): string {
 }
 
 const MONTH_COLUMNS = [
-  { key: "Jan", label: "Januari", achCol: 7, targetCol: 8, scoreCol: 9, bdgScoreCol: null as number | null, smgScoreCol: null as number | null },
-  { key: "Feb", label: "Februari", achCol: 10, targetCol: 11, scoreCol: 12, bdgScoreCol: null as number | null, smgScoreCol: null as number | null },
-  { key: "Mar", label: "Maret", achCol: 13, targetCol: 14, scoreCol: 15, bdgScoreCol: null as number | null, smgScoreCol: null as number | null },
-  { key: "Apr", label: "April", achCol: 16, targetCol: 17, scoreCol: 18, bdgScoreCol: null as number | null, smgScoreCol: null as number | null },
-  { key: "May", label: "Mei", achCol: 19, targetCol: 20, scoreCol: 21, bdgScoreCol: null as number | null, smgScoreCol: null as number | null },
-  { key: "Jun", label: "Juni", achCol: 22, targetCol: 23, scoreCol: 24, bdgScoreCol: null as number | null, smgScoreCol: null as number | null },
-  { key: "Jul", label: "Juli", achCol: 26, targetCol: 27, scoreCol: 28, bdgScoreCol: 30, smgScoreCol: 32 },
-  { key: "Aug", label: "Agustus", achCol: 33, targetCol: 34, scoreCol: 35, bdgScoreCol: 37, smgScoreCol: 39 },
-  { key: "Sep", label: "September", achCol: 40, targetCol: 41, scoreCol: 42, bdgScoreCol: 44, smgScoreCol: 46 },
-  { key: "Oct", label: "Oktober", achCol: 47, targetCol: 48, scoreCol: 49, bdgScoreCol: 51, smgScoreCol: 53 },
+  { key: "Jan", label: "Januari", achCol: 7, targetCol: 8, scoreCol: 9, bdgAchCol: null as number | null, bdgScoreCol: null as number | null, smgAchCol: null as number | null, smgScoreCol: null as number | null },
+  { key: "Feb", label: "Februari", achCol: 10, targetCol: 11, scoreCol: 12, bdgAchCol: null as number | null, bdgScoreCol: null as number | null, smgAchCol: null as number | null, smgScoreCol: null as number | null },
+  { key: "Mar", label: "Maret", achCol: 13, targetCol: 14, scoreCol: 15, bdgAchCol: null as number | null, bdgScoreCol: null as number | null, smgAchCol: null as number | null, smgScoreCol: null as number | null },
+  { key: "Apr", label: "April", achCol: 16, targetCol: 17, scoreCol: 18, bdgAchCol: null as number | null, bdgScoreCol: null as number | null, smgAchCol: null as number | null, smgScoreCol: null as number | null },
+  { key: "May", label: "Mei", achCol: 19, targetCol: 20, scoreCol: 21, bdgAchCol: null as number | null, bdgScoreCol: null as number | null, smgAchCol: null as number | null, smgScoreCol: null as number | null },
+  { key: "Jun", label: "Juni", achCol: 22, targetCol: 23, scoreCol: 24, bdgAchCol: null as number | null, bdgScoreCol: null as number | null, smgAchCol: null as number | null, smgScoreCol: null as number | null },
+  { key: "Jul", label: "Juli", achCol: 26, targetCol: 27, scoreCol: 28, bdgAchCol: 29, bdgScoreCol: 30, smgAchCol: 31, smgScoreCol: 32 },
+  { key: "Aug", label: "Agustus", achCol: 33, targetCol: 34, scoreCol: 35, bdgAchCol: 36, bdgScoreCol: 37, smgAchCol: 38, smgScoreCol: 39 },
+  { key: "Sep", label: "September", achCol: 40, targetCol: 41, scoreCol: 42, bdgAchCol: 43, bdgScoreCol: 44, smgAchCol: 45, smgScoreCol: 46 },
+  { key: "Oct", label: "Oktober", achCol: 47, targetCol: 48, scoreCol: 49, bdgAchCol: 50, bdgScoreCol: 51, smgAchCol: 52, smgScoreCol: 53 },
 ];
 
 function extractRegionalMonthlyTrends(rows: string[][]): RegionalMonthlyTrendItem[] {
@@ -718,7 +718,9 @@ function extractMultiMonthRows(rows: string[][]): MultiMonthParamRow[] {
         ach: clean(row[m.achCol]),
         achTarget: clean(row[m.targetCol]),
         score: clean(row[m.scoreCol]),
+        bdgAch: m.bdgAchCol ? clean(row[m.bdgAchCol]) : undefined,
         bdgScore: m.bdgScoreCol ? clean(row[m.bdgScoreCol]) : undefined,
+        smgAch: m.smgAchCol ? clean(row[m.smgAchCol]) : undefined,
         smgScore: m.smgScoreCol ? clean(row[m.smgScoreCol]) : undefined,
       };
     });

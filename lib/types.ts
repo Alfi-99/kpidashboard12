@@ -56,11 +56,13 @@ export interface MonthlyKpiRow {
 }
 
 export interface MultiMonthParamValue {
-  ach?: string;
-  achTarget?: string;
-  score?: string;
-  bdgScore?: string;
-  smgScore?: string;
+  ach?: string;        // Jan-Jun: Ach; Jul-Oct: Ach Nasional
+  achTarget?: string;  // Ach Target / Ach to Target
+  score?: string;      // Score Nasional
+  bdgAch?: string;     // Jul-Oct: BDG Ach
+  bdgScore?: string;   // Jul-Oct: BDG Score
+  smgAch?: string;     // Jul-Oct: SMG Ach
+  smgScore?: string;   // Jul-Oct: SMG Score
 }
 
 export interface MultiMonthParamRow {
